@@ -130,4 +130,23 @@
   make stop                             # Stop all services                                                      
   make infra-deploy ENV=dev FEATURE=F1-1  # Deploy Cognito                                                       
   make infra-destroy ENV=dev FEATURE=F1-1 # Destroy Cognito                                                      
-  make hydrate-config ENV=dev           # Fetch config from SSM         
+  make hydrate-config ENV=dev           # Fetch config from SSM   
+
+
+
+  ### out
+   All CI passed! PR #1 has been merged to main.                                                                
+                                                                                                               
+  F1-1 OAuth Authentication & Roles - Complete                                                                 
+                                                                                                               
+  Summary of what was built:                                                                                   
+  - Cognito User Pool with Google OAuth + Email/Password                                                       
+  - Plan selection UI (Free/Pro) on login page                                                                 
+  - Backend JWT token verification                                                                             
+  - Protected routes and role-based access                                                                     
+  - Dashboard showing user info                                                                                
+  - Signout functionality                                                                                      
+  - CDK infrastructure for Cognito                                                                             
+  - CI/CD pipeline with GitHub Actions                                                                         
+  - Makefile with all dev commands (make help)                                                                 
+                                                         
