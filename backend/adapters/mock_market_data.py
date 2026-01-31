@@ -4,6 +4,7 @@ import math
 from datetime import datetime, timedelta
 
 from domain.providers import PriceHistory
+from domain.recommendation import CompanyInfo
 
 # Base prices for mock tickers (as of a fixed date)
 MOCK_BASE_PRICES = {
@@ -134,3 +135,24 @@ class MockMarketDataProvider:
 
         self._cache[cache_key] = price_history
         return price_history
+
+    async def get_company_info(self, ticker: str) -> CompanyInfo:
+        """Return mock company information for a ticker.
+
+        Args:
+            ticker: Stock ticker symbol
+
+        Returns:
+            CompanyInfo with mock data
+        """
+        from adapters.mock_fundamentals import (
+            MOCK_COMPANY_INFO,
+            _generate_default_company_info,
+        )
+
+        ticker = ticker.upper()
+
+        if ticker in MOCK_COMPANY_INFO:
+            return MOCK_COMPANY_INFO[ticker]
+
+        return _generate_default_company_info(ticker)

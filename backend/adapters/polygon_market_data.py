@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
 from domain.providers import InvalidTickerError, PriceHistory, ProviderError
+from domain.recommendation import CompanyInfo
 
 logger = logging.getLogger(__name__)
 
@@ -166,4 +167,86 @@ class PolygonMarketDataProvider:
             lows=data["lows"],
             closes=data["closes"],
             volumes=data["volumes"],
+        )
+
+    async def get_company_info(self, ticker: str) -> CompanyInfo:
+        """Fetch company information from Polygon.io.
+
+        Args:
+            ticker: Stock ticker symbol
+
+        Returns:
+            CompanyInfo with name, sector, industry, etc.
+        """
+        # Check cache first
+        cache_key = make_cache_key(PROVIDER_NAME, "company_info", ticker)
+        cached = self.cache.get(cache_key)
+        if cached:
+            logger.debug(f"Cache hit for {cache_key}")
+            return self._deserialize_company_info(cached.data)
+
+        url = f"{POLYGON_BASE_URL}/v3/reference/tickers/{ticker}"
+
+        try:
+            response = await self.http_client.get(
+                url,
+                params={"apiKey": self.api_key},
+            )
+            data = response.json()
+
+            if data.get("status") != "OK":
+                logger.warning(f"Polygon company info error for {ticker}: {data}")
+                return CompanyInfo(name=ticker)
+
+            results = data.get("results", {})
+
+            company_info = CompanyInfo(
+                name=results.get("name", ticker),
+                sector=None,  # Polygon doesn't have sector directly
+                industry=results.get("sic_description"),
+                exchange=results.get("primary_exchange"),
+                description=results.get("description"),
+                website=results.get("homepage_url"),
+            )
+
+            # Cache the result (24 hour TTL for company info)
+            now = datetime.now(timezone.utc)
+            self.cache.set(
+                CacheEntry(
+                    cache_key=cache_key,
+                    provider=PROVIDER_NAME,
+                    data=self._serialize_company_info(company_info),
+                    ticker=ticker,
+                    fetched_at=now,
+                    expires_at=now + timedelta(seconds=86400),
+                )
+            )
+
+            logger.info(f"Fetched company info for {ticker} from Polygon")
+            return company_info
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch company info for {ticker}: {e}")
+            return CompanyInfo(name=ticker)
+
+    def _serialize_company_info(self, ci: CompanyInfo) -> dict:
+        """Serialize CompanyInfo for caching."""
+        return {
+            "name": ci.name,
+            "sector": ci.sector,
+            "industry": ci.industry,
+            "exchange": ci.exchange,
+            "description": ci.description,
+            "website": ci.website,
+        }
+
+    def _deserialize_company_info(self, data: dict) -> CompanyInfo:
+        """Deserialize CompanyInfo from cache."""
+        return CompanyInfo(
+            name=data.get("name", "Unknown"),
+            sector=data.get("sector"),
+            industry=data.get("industry"),
+            exchange=data.get("exchange"),
+            description=data.get("description"),
+            website=data.get("website"),
         )

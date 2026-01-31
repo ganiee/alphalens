@@ -155,9 +155,9 @@ class RecommendationService:
         attribution.fundamentals_provider = self._get_provider_name(self.fundamentals)
         attribution.fundamentals_fetched_at = now
 
-        # Fetch company info (uses same provider as fundamentals)
+        # Fetch company info (uses market data provider - Polygon has this data)
         try:
-            company_info = await self.fundamentals.get_company_info(ticker)
+            company_info = await self.market_data.get_company_info(ticker)
         except Exception as e:
             logger.warning(f"Failed to fetch company info for {ticker}: {e}")
             company_info = CompanyInfo(name=ticker)
