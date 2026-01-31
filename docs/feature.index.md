@@ -4,7 +4,7 @@
 |------------|-------|--------|-------|---------------|------|-------|------------|-------|----------|
 | F1-0 | 1 | Complete | Project Bootstrap & CI/CD | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-0-project-bootstrap/spec.md) | [tasks](features/F1-0-project-bootstrap/tasks.md) | [acceptance](features/F1-0-project-bootstrap/acceptance.md) | [tests](features/F1-0-project-bootstrap/tests.md) | [rollback](features/F1-0-project-bootstrap/rollback.md) |
 | F1-1 | 1 | Complete | OAuth Authentication & Roles | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-1-oauth-auth/spec.md) | [tasks](features/F1-1-oauth-auth/tasks.md) | [acceptance](features/F1-1-oauth-auth/acceptance.md) | [tests](features/F1-1-oauth-auth/tests.md) | [rollback](features/F1-1-oauth-auth/rollback.md) |
-| F1-2 | 1 | Planned | Recommendation Engine (Basic Scoring) | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
+| F1-2 | 1 | In Progress | Recommendation Engine (Basic Scoring) | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-2-recommendation-engine/spec.md) | [tasks](features/F1-2-recommendation-engine/tasks.md) | [acceptance](features/F1-2-recommendation-engine/acceptance.md) | [tests](features/F1-2-recommendation-engine/tests.md) | [rollback](features/F1-2-recommendation-engine/rollback.md) |
 | F1-3 | 1 | Planned | Usage Limits Enforcement | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-4 | 1 | Planned | LLM Explainability Layer | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-5 | 1 | Planned | User Dashboard & History | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
