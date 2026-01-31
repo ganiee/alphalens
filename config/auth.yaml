@@ -1,0 +1,26 @@
+# ===========================================
+# F1-1 AUTH CONFIGURATION
+# Auto-configured by CDK deployment
+# ===========================================
+
+aws:
+  region: "us-east-2"
+
+cognito:
+  user_pool_id: "us-east-2_1YyHK37iq"
+  client_id: "32tsn6g00gvp02t6kqq67u5s9f"
+  domain: "alphalens-auth.auth.us-east-2.amazoncognito.com"
+
+google_oauth:
+  # Google OAuth not configured yet
+  # To enable, add Google identity provider in Cognito console
+  enabled: false
+
+deployment:
+  # Local development URLs
+  local_frontend_url: "http://localhost:3000"
+  local_backend_url: "http://localhost:8000"
+
+  # Production URLs (fill when deploying)
+  prod_frontend_url: ""
+  prod_backend_url: ""

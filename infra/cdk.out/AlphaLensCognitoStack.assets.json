@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "ac7e79d6354c30b5fb4c2a0a52df368c011435b093750153cd24f9bfd4899641": {
+      "displayName": "AlphaLensCognitoStack Template",
+      "source": {
+        "path": "AlphaLensCognitoStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "656721750836-us-east-2-4242faf5": {
+          "bucketName": "cdk-hnb659fds-assets-656721750836-us-east-2",
+          "objectKey": "ac7e79d6354c30b5fb4c2a0a52df368c011435b093750153cd24f9bfd4899641.json",
+          "region": "us-east-2",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::656721750836:role/cdk-hnb659fds-file-publishing-role-656721750836-us-east-2"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

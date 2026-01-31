@@ -3,7 +3,7 @@
 | Feature ID | Phase | Status | Title | PRD Reference | Spec | Tasks | Acceptance | Tests | Rollback |
 |------------|-------|--------|-------|---------------|------|-------|------------|-------|----------|
 | F1-0 | 1 | Complete | Project Bootstrap & CI/CD | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-0-project-bootstrap/spec.md) | [tasks](features/F1-0-project-bootstrap/tasks.md) | [acceptance](features/F1-0-project-bootstrap/acceptance.md) | [tests](features/F1-0-project-bootstrap/tests.md) | [rollback](features/F1-0-project-bootstrap/rollback.md) |
-| F1-1 | 1 | Planned | OAuth Authentication & Roles | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
+| F1-1 | 1 | In Progress | OAuth Authentication & Roles | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-1-oauth-auth/spec.md) | [tasks](features/F1-1-oauth-auth/tasks.md) | [acceptance](features/F1-1-oauth-auth/acceptance.md) | [tests](features/F1-1-oauth-auth/tests.md) | [rollback](features/F1-1-oauth-auth/rollback.md) |
 | F1-2 | 1 | Planned | Recommendation Engine (Basic Scoring) | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-3 | 1 | Planned | Usage Limits Enforcement | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-4 | 1 | Planned | LLM Explainability Layer | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |

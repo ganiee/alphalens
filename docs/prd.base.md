@@ -33,7 +33,8 @@ Backend
     • Stateless API layer
 Authentication
     • Amazon Cognito (User Pools)
-    • OAuth: Google, Facebook
+    • OAuth: Google
+    • Email/password registration
     • Roles: user, admin
 
 5. Core Platform Capabilities (Always-On)
@@ -325,5 +326,22 @@ A feature may be marked Done only when:
 18.5 Test Data & Fixtures
     • Use fixed, versioned fixtures for prices/news responses.
     • Freeze time for indicator calculations where relevant.
-    • No flaky tests (no reliance on “current market time” or live endpoints).
+    • No flaky tests (no reliance on "current market time" or live endpoints).
+
+19. UI Architecture & Contracts (Invariant)
+
+- UI is defined using **screen-level contracts**, not pixel specifications.
+- Each user-facing route MUST define:
+  - Purpose
+  - Required UI states (loading, error, empty, success)
+  - Allowed user actions
+  - Routing rules
+  - Data contract (inputs / outputs)
+  - Explicit constraints (what the screen must NOT do)
+
+- Visual layout, styling, and component composition are implementation details
+  and MAY vary, but contracts MUST be honored.
+
+- Phase PRDs define which screens exist.
+- Feature PRDs define the contract for each screen they touch.
 
