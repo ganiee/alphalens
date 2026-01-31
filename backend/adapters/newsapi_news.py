@@ -104,16 +104,6 @@ class NewsAPINewsProvider:
         Raises:
             ProviderError: If news cannot be fetched
         """
-        # Build search query - use company name if available for better relevance
-        if company_name and company_name != ticker:
-            # Remove common suffixes for cleaner search
-            clean_name = company_name.replace(" Inc.", "").replace(" Corp.", "").replace(" Corporation", "").replace(", Inc.", "").replace(" Ltd.", "").strip()
-            # Search for company name with stock/shares context
-            search_query = f'"{clean_name}" AND (stock OR shares OR market)'
-        else:
-            # Fallback to ticker for short/common tickers
-            search_query = f"{ticker} stock"
-
         # Check cache first
         cache_key = make_cache_key(
             PROVIDER_NAME, "news", ticker, max_articles=max_articles
@@ -124,59 +114,41 @@ class NewsAPINewsProvider:
             return self._deserialize_articles(cached.data)
 
         try:
-            url = f"{self.base_url}/everything"
+            # Build search queries - try company name first, then fall back to ticker
+            queries_to_try = []
 
-            logger.debug(f"NewsAPI search query for {ticker}: {search_query}")
-            response = await self.http_client.get(
-                url,
-                params={
-                    "q": search_query,
-                    "sortBy": "publishedAt",
-                    "pageSize": min(self.page_size, max_articles),
-                    "language": "en",
-                },
-                headers={"X-Api-Key": self.api_key},
-            )
-
-            data = response.json()
-
-            if data.get("status") == "error":
-                raise ProviderError(
-                    PROVIDER_NAME,
-                    ticker,
-                    data.get("message", "Unknown API error"),
+            if company_name and company_name != ticker:
+                # Remove common suffixes for cleaner search
+                clean_name = (
+                    company_name.replace(" Inc.", "")
+                    .replace(" Corp.", "")
+                    .replace(" Corporation", "")
+                    .replace(", Inc.", "")
+                    .replace(" Ltd.", "")
+                    .strip()
                 )
+                # Primary: company name with stock context
+                queries_to_try.append(f'"{clean_name}" AND (stock OR shares OR market)')
 
-            raw_articles = data.get("articles", [])
+            # Fallback: ticker with stock context
+            queries_to_try.append(f"{ticker} stock")
 
-            # Parse articles
             articles = []
-            for article in raw_articles[:max_articles]:
-                title = article.get("title", "")
-                source_info = article.get("source", {})
-                source_name = source_info.get("name", "Unknown")
-                published_at = article.get("publishedAt", "")
-                url = article.get("url", "")
-                description = article.get("description", "")
+            for search_query in queries_to_try:
+                logger.debug(f"NewsAPI search query for {ticker}: {search_query}")
+                articles = await self._fetch_articles(ticker, search_query, max_articles)
 
-                # Compute simple sentiment label from title and description
-                sentiment_label = self._compute_sentiment_label(
-                    f"{title} {description}"
-                )
+                if articles:
+                    logger.info(
+                        f"Found {len(articles)} articles for {ticker} with query: {search_query}"
+                    )
+                    break
+                else:
+                    logger.debug(
+                        f"No results for {ticker} with query: {search_query}, trying next"
+                    )
 
-                news_article = NewsArticle(
-                    title=title,
-                    source=source_name,
-                    published_at=published_at,
-                    url=url,
-                    summary=description,
-                )
-                # Attach sentiment label as an extra attribute
-                news_article.sentiment_label = sentiment_label  # type: ignore
-
-                articles.append(news_article)
-
-            # Cache the result
+            # Cache the result (even if empty)
             now = datetime.now(timezone.utc)
             self.cache.set(
                 CacheEntry(
@@ -197,6 +169,70 @@ class NewsAPINewsProvider:
         except Exception as e:
             logger.error(f"NewsAPI error for {ticker}: {e}")
             raise ProviderError(PROVIDER_NAME, ticker, str(e))
+
+    async def _fetch_articles(
+        self, ticker: str, search_query: str, max_articles: int
+    ) -> list[NewsArticle]:
+        """Fetch articles for a specific search query.
+
+        Args:
+            ticker: Stock ticker symbol (for error reporting)
+            search_query: The search query to use
+            max_articles: Maximum number of articles to return
+
+        Returns:
+            List of NewsArticle objects
+        """
+        url = f"{self.base_url}/everything"
+
+        response = await self.http_client.get(
+            url,
+            params={
+                "q": search_query,
+                "sortBy": "publishedAt",
+                "pageSize": min(self.page_size, max_articles),
+                "language": "en",
+            },
+            headers={"X-Api-Key": self.api_key},
+        )
+
+        data = response.json()
+
+        if data.get("status") == "error":
+            raise ProviderError(
+                PROVIDER_NAME,
+                ticker,
+                data.get("message", "Unknown API error"),
+            )
+
+        raw_articles = data.get("articles", [])
+
+        # Parse articles
+        articles = []
+        for article in raw_articles[:max_articles]:
+            title = article.get("title", "")
+            source_info = article.get("source", {})
+            source_name = source_info.get("name", "Unknown")
+            published_at = article.get("publishedAt", "")
+            article_url = article.get("url", "")
+            description = article.get("description", "")
+
+            # Compute simple sentiment label from title and description
+            sentiment_label = self._compute_sentiment_label(f"{title} {description}")
+
+            news_article = NewsArticle(
+                title=title,
+                source=source_name,
+                published_at=published_at,
+                url=article_url,
+                summary=description,
+            )
+            # Attach sentiment label as an extra attribute
+            news_article.sentiment_label = sentiment_label  # type: ignore
+
+            articles.append(news_article)
+
+        return articles
 
     def _compute_sentiment_label(self, text: str) -> str:
         """Compute a simple sentiment label from text.

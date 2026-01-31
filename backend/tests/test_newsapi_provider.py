@@ -129,6 +129,50 @@ class TestNewsAPINewsProvider:
         assert call_args[1]["params"]["q"] == "AAPL stock"
 
     @pytest.mark.asyncio
+    async def test_fallback_to_ticker_when_company_name_returns_empty(
+        self, newsapi_provider, mock_http_client, mock_cache
+    ):
+        """Test fallback to ticker search when company name search returns no results."""
+        # First call (company name) returns empty, second call (ticker) returns results
+        empty_response = MagicMock()
+        empty_response.json.return_value = {"status": "ok", "articles": []}
+
+        ticker_response = MagicMock()
+        ticker_response.json.return_value = {
+            "status": "ok",
+            "articles": [
+                {
+                    "title": "GOOG stock rises",
+                    "source": {"name": "Reuters"},
+                    "publishedAt": "2024-01-15T10:00:00Z",
+                    "url": "https://example.com/1",
+                    "description": "Google parent company stock rises.",
+                },
+            ],
+        }
+
+        mock_http_client.get.side_effect = [empty_response, ticker_response]
+
+        result = await newsapi_provider.get_news(
+            "GOOG", max_articles=5, company_name="Alphabet Inc."
+        )
+
+        # Should have made two API calls
+        assert mock_http_client.get.call_count == 2
+
+        # First call should use company name
+        first_call = mock_http_client.get.call_args_list[0]
+        assert '"Alphabet" AND (stock OR shares OR market)' == first_call[1]["params"]["q"]
+
+        # Second call should use ticker
+        second_call = mock_http_client.get.call_args_list[1]
+        assert second_call[1]["params"]["q"] == "GOOG stock"
+
+        # Should return results from ticker search
+        assert len(result) == 1
+        assert result[0].title == "GOOG stock rises"
+
+    @pytest.mark.asyncio
     async def test_sentiment_label_positive(self, newsapi_provider, mock_http_client, mock_cache):
         """Test sentiment labeling for positive news."""
         mock_response = MagicMock()
