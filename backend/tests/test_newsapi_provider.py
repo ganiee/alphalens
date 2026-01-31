@@ -203,11 +203,11 @@ class TestNewsAPINewsProvider:
             "status": "ok",
             "articles": [
                 {
-                    "title": "Company faces major decline amid layoff concerns",
+                    "title": "Company stock crashes amid terrible scandal",
                     "source": {"name": "Bloomberg"},
                     "publishedAt": "2024-01-15T10:00:00Z",
                     "url": "https://example.com/1",
-                    "description": "Stock plunge as investigation announced.",
+                    "description": "Worst earnings ever, investors flee in panic.",
                 },
             ],
         }

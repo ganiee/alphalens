@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
 from domain.providers import NewsArticle, ProviderError
@@ -11,52 +13,12 @@ logger = logging.getLogger(__name__)
 
 PROVIDER_NAME = "newsapi"
 
-# Simple keyword-based sentiment detection
-POSITIVE_KEYWORDS = {
-    "surge",
-    "soar",
-    "jump",
-    "gain",
-    "rise",
-    "rally",
-    "beat",
-    "exceed",
-    "record",
-    "growth",
-    "upgrade",
-    "bullish",
-    "strong",
-    "boost",
-    "profit",
-    "success",
-    "breakthrough",
-    "innovation",
-    "optimistic",
-    "expansion",
-}
+# VADER sentiment analyzer (initialized once)
+_sentiment_analyzer = SentimentIntensityAnalyzer()
 
-NEGATIVE_KEYWORDS = {
-    "fall",
-    "drop",
-    "decline",
-    "plunge",
-    "crash",
-    "loss",
-    "miss",
-    "downgrade",
-    "bearish",
-    "weak",
-    "concern",
-    "risk",
-    "cut",
-    "layoff",
-    "investigation",
-    "lawsuit",
-    "warning",
-    "recession",
-    "slowdown",
-    "trouble",
-}
+# Sentiment thresholds for VADER compound score (-1 to 1)
+POSITIVE_THRESHOLD = 0.05
+NEGATIVE_THRESHOLD = -0.05
 
 
 class NewsAPINewsProvider:
@@ -235,7 +197,14 @@ class NewsAPINewsProvider:
         return articles
 
     def _compute_sentiment_label(self, text: str) -> str:
-        """Compute a simple sentiment label from text.
+        """Compute sentiment label using VADER sentiment analyzer.
+
+        VADER (Valence Aware Dictionary and sEntiment Reasoner) is specifically
+        designed for social media and news text. It handles:
+        - Negations ("not good" → negative)
+        - Intensifiers ("very good" → more positive)
+        - Punctuation and capitalization
+        - Emoticons and slang
 
         Args:
             text: Text to analyze
@@ -243,15 +212,17 @@ class NewsAPINewsProvider:
         Returns:
             "positive", "negative", or "neutral"
         """
-        text_lower = text.lower()
-        words = set(text_lower.split())
+        if not text or not text.strip():
+            return "neutral"
 
-        positive_count = len(words & POSITIVE_KEYWORDS)
-        negative_count = len(words & NEGATIVE_KEYWORDS)
+        # Get VADER sentiment scores
+        scores = _sentiment_analyzer.polarity_scores(text)
+        compound = scores["compound"]  # Normalized score from -1 to 1
 
-        if positive_count > negative_count:
+        # Classify based on compound score
+        if compound >= POSITIVE_THRESHOLD:
             return "positive"
-        elif negative_count > positive_count:
+        elif compound <= NEGATIVE_THRESHOLD:
             return "negative"
         else:
             return "neutral"
