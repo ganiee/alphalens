@@ -37,10 +37,7 @@ class Settings(BaseSettings):
     @property
     def cognito_issuer(self) -> str:
         """Expected issuer for JWT tokens."""
-        return (
-            f"https://cognito-idp.{self.aws_region}.amazonaws.com/"
-            f"{self.cognito_user_pool_id}"
-        )
+        return f"https://cognito-idp.{self.aws_region}.amazonaws.com/{self.cognito_user_pool_id}"
 
 
 @lru_cache
