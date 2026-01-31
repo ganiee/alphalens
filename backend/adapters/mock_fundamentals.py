@@ -25,6 +25,13 @@ MOCK_FUNDAMENTALS = {
         debt_to_equity=0.1,
         market_cap=1_800_000_000_000,  # ~1.8T
     ),
+    "GOOG": FundamentalMetrics(  # Class C shares (same company as GOOGL)
+        pe_ratio=24.8,
+        revenue_growth=0.10,
+        profit_margin=0.22,
+        debt_to_equity=0.1,
+        market_cap=1_800_000_000_000,  # ~1.8T
+    ),
     "AMZN": FundamentalMetrics(
         pe_ratio=62.5,
         revenue_growth=0.11,
@@ -91,6 +98,12 @@ MOCK_COMPANY_INFO = {
         exchange="NASDAQ",
     ),
     "GOOGL": CompanyInfo(
+        name="Alphabet Inc.",
+        sector="Technology",
+        industry="Internet Content & Information",
+        exchange="NASDAQ",
+    ),
+    "GOOG": CompanyInfo(  # Class C shares (same company as GOOGL)
         name="Alphabet Inc.",
         sector="Technology",
         industry="Internet Content & Information",

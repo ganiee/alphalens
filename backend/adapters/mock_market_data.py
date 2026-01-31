@@ -11,6 +11,7 @@ MOCK_BASE_PRICES = {
     "AAPL": 185.0,
     "MSFT": 378.0,
     "GOOGL": 141.0,
+    "GOOG": 141.0,  # Class C shares (same price as GOOGL)
     "AMZN": 178.0,
     "NVDA": 495.0,
     "META": 390.0,
