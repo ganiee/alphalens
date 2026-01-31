@@ -25,6 +25,28 @@ class Settings(BaseSettings):
         "http://localhost:3003",
     ]
 
+    # Data Provider API Keys
+    fmp_api_key: str = ""
+    polygon_api_key: str = ""
+    news_api_key: str = ""
+    news_api_base_url: str = "https://newsapi.org/v2"
+    news_api_country: str = "us"
+    news_api_page_size: int = 8
+
+    # Cache Configuration
+    provider_cache_enabled: bool = True
+    provider_cache_backend: str = "sqlite"
+    provider_cache_dir: str = ".cache/alphalens"
+    provider_cache_db_path: str = ".cache/alphalens/cache.sqlite"
+    market_cache_ttl_seconds: int = 900  # 15 minutes - helps avoid rate limits
+    fundamentals_cache_ttl_seconds: int = 86400
+    news_cache_ttl_seconds: int = 300
+
+    # HTTP Client Configuration
+    http_timeout_seconds: int = 10
+    http_max_retries: int = 2
+    http_retry_backoff_seconds: float = 0.5
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

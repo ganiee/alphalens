@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+from domain.providers import InvalidTickerError
 from domain.recommendation import (
     Horizon,
     PlanConstraintError,
@@ -77,6 +78,11 @@ async def analyze_stocks(
 
         return AnalyzeResponse(run_id=result.run_id, result=result)
 
+    except InvalidTickerError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid ticker: {e.message}",
+        ) from e
     except PlanConstraintError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

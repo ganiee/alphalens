@@ -45,12 +45,41 @@ export interface SentimentData {
   neutral_count: number;
 }
 
+export interface CompanyInfo {
+  name: string;
+  sector: string | null;
+  industry: string | null;
+  exchange: string | null;
+  description: string | null;
+  website: string | null;
+}
+
+export interface NewsArticleSummary {
+  title: string;
+  source: string;
+  published_at: string;
+  url: string;
+  sentiment_label: string | null;
+}
+
+export interface ProviderAttribution {
+  market_data_provider: string;
+  market_data_fetched_at: string | null;
+  fundamentals_provider: string;
+  fundamentals_fetched_at: string | null;
+  news_provider: string;
+  news_fetched_at: string | null;
+}
+
 export interface EvidencePacket {
   ticker: string;
+  company_info: CompanyInfo;
   technical: TechnicalIndicators;
   fundamental: FundamentalMetrics;
   sentiment: SentimentData;
   fetched_at: string;
+  news_articles: NewsArticleSummary[];
+  attribution: ProviderAttribution;
 }
 
 export interface RecommendationResult {

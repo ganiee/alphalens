@@ -11,6 +11,12 @@ import {
   RecommendationResult,
   StockScore,
   EvidencePacket,
+  CompanyInfo,
+  NewsArticleSummary,
+  TechnicalIndicators,
+  FundamentalMetrics,
+  SentimentData,
+  ProviderAttribution,
 } from "@/lib/api";
 
 export default function ResultsPage() {
@@ -203,15 +209,43 @@ function ScoreCard({ score, evidence, isExpanded, onToggleEvidence }: ScoreCardP
     return "bg-red-100";
   };
 
+  const companyInfo = evidence?.company_info;
+
   return (
     <div className="rounded-lg bg-white p-6 shadow">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div>
-          <span className="text-2xl font-bold text-gray-900">{score.ticker}</span>
-          <span className="ml-2 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-            Rank #{score.rank}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-gray-900">{score.ticker}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+              Rank #{score.rank}
+            </span>
+          </div>
+          {companyInfo && (
+            <p className="mt-1 text-sm text-gray-600 truncate" title={companyInfo.name}>
+              {companyInfo.name}
+            </p>
+          )}
+          {(companyInfo?.sector || companyInfo?.industry || companyInfo?.exchange) && (
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {companyInfo.exchange && (
+                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                  {companyInfo.exchange}
+                </span>
+              )}
+              {companyInfo.sector && (
+                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
+                  {companyInfo.sector}
+                </span>
+              )}
+              {companyInfo.industry && (
+                <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-700 truncate max-w-[150px]" title={companyInfo.industry}>
+                  {companyInfo.industry}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div
           className={`rounded-full px-4 py-2 text-2xl font-bold ${getScoreBg(score.composite_score)} ${getScoreColor(score.composite_score)}`}
@@ -245,9 +279,24 @@ function ScoreCard({ score, evidence, isExpanded, onToggleEvidence }: ScoreCardP
       {/* Expanded Evidence */}
       {isExpanded && evidence && (
         <div className="mt-4 space-y-4 border-t pt-4">
-          <EvidenceSection title="Technical Indicators" data={evidence.technical} />
-          <EvidenceSection title="Fundamentals" data={evidence.fundamental} />
-          <EvidenceSection title="Sentiment" data={evidence.sentiment} />
+          <TechnicalPanel
+            data={evidence.technical}
+            provider={evidence.attribution?.market_data_provider}
+            fetchedAt={evidence.attribution?.market_data_fetched_at}
+          />
+          <FundamentalsPanel
+            data={evidence.fundamental}
+            provider={evidence.attribution?.fundamentals_provider}
+            fetchedAt={evidence.attribution?.fundamentals_fetched_at}
+          />
+          <SentimentPanel data={evidence.sentiment} />
+          {evidence.news_articles && evidence.news_articles.length > 0 && (
+            <NewsPanel
+              articles={evidence.news_articles}
+              provider={evidence.attribution?.news_provider}
+              fetchedAt={evidence.attribution?.news_fetched_at}
+            />
+          )}
         </div>
       )}
     </div>
@@ -269,35 +318,256 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-function EvidenceSection({ title, data }: { title: string; data: object }) {
-  const formatValue = (key: string, value: unknown): string => {
-    if (value === null || value === undefined) return "N/A";
-    if (typeof value === "number") {
-      if (key.includes("ratio") || key.includes("growth") || key.includes("margin")) {
-        return value.toFixed(2);
-      }
-      if (key.includes("cap")) {
-        return `$${(value / 1e9).toFixed(1)}B`;
-      }
-      if (key.includes("price") || key.includes("sma")) {
-        return `$${value.toFixed(2)}`;
-      }
-      return value.toFixed(2);
+// Helper to format time ago
+function timeAgo(dateString: string | null): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? "s" : ""} ago`;
+}
+
+// Provider badge component
+function ProviderBadge({ provider }: { provider?: string }) {
+  if (!provider) return null;
+
+  const getProviderStyle = (p: string) => {
+    switch (p.toLowerCase()) {
+      case "polygon":
+        return "bg-purple-100 text-purple-800";
+      case "fmp":
+        return "bg-blue-100 text-blue-800";
+      case "newsapi":
+        return "bg-green-100 text-green-800";
+      case "mock":
+        return "bg-gray-100 text-gray-600";
+      default:
+        return "bg-gray-100 text-gray-600";
     }
-    return String(value);
+  };
+
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${getProviderStyle(provider)}`}>
+      {provider}
+    </span>
+  );
+}
+
+// Panel header with provider badge and timestamp
+function PanelHeader({
+  title,
+  provider,
+  fetchedAt,
+}: {
+  title: string;
+  provider?: string;
+  fetchedAt?: string | null;
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between">
+      <h4 className="text-sm font-medium text-gray-900">{title}</h4>
+      <div className="flex items-center gap-2 text-xs">
+        <ProviderBadge provider={provider} />
+        {fetchedAt && <span className="text-gray-400">{timeAgo(fetchedAt)}</span>}
+      </div>
+    </div>
+  );
+}
+
+// Technical indicators panel
+function TechnicalPanel({
+  data,
+  provider,
+  fetchedAt,
+}: {
+  data: TechnicalIndicators;
+  provider?: string;
+  fetchedAt?: string | null;
+}) {
+  const formatValue = (key: string, value: number): string => {
+    if (key.includes("price") || key.includes("sma")) {
+      return `$${value.toFixed(2)}`;
+    }
+    return value.toFixed(2);
+  };
+
+  const indicators = [
+    { key: "current_price", label: "Price" },
+    { key: "rsi", label: "RSI" },
+    { key: "macd", label: "MACD" },
+    { key: "macd_signal", label: "MACD Signal" },
+    { key: "sma_50", label: "SMA 50" },
+    { key: "sma_200", label: "SMA 200" },
+    { key: "volume_trend", label: "Volume Trend" },
+  ];
+
+  return (
+    <div>
+      <PanelHeader title="Technical Indicators" provider={provider} fetchedAt={fetchedAt} />
+      <div className="grid grid-cols-2 gap-1 text-xs">
+        {indicators.map(({ key, label }) => (
+          <div key={key} className="flex justify-between">
+            <span className="text-gray-500">{label}:</span>
+            <span className="text-gray-900">
+              {formatValue(key, data[key as keyof TechnicalIndicators] as number)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Fundamentals panel
+function FundamentalsPanel({
+  data,
+  provider,
+  fetchedAt,
+}: {
+  data: FundamentalMetrics;
+  provider?: string;
+  fetchedAt?: string | null;
+}) {
+  const formatValue = (key: string, value: number | null): string => {
+    if (value === null) return "N/A";
+    if (key === "market_cap") {
+      return `$${(value / 1e9).toFixed(1)}B`;
+    }
+    if (key === "profit_margin") {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+    return value.toFixed(2);
+  };
+
+  const metrics = [
+    { key: "pe_ratio", label: "P/E Ratio" },
+    { key: "revenue_growth", label: "Revenue Growth" },
+    { key: "profit_margin", label: "Profit Margin" },
+    { key: "debt_to_equity", label: "Debt/Equity" },
+    { key: "market_cap", label: "Market Cap" },
+  ];
+
+  return (
+    <div>
+      <PanelHeader title="Fundamentals" provider={provider} fetchedAt={fetchedAt} />
+      <div className="grid grid-cols-2 gap-1 text-xs">
+        {metrics.map(({ key, label }) => (
+          <div key={key} className="flex justify-between">
+            <span className="text-gray-500">{label}:</span>
+            <span className="text-gray-900">
+              {formatValue(key, data[key as keyof FundamentalMetrics])}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Sentiment panel
+function SentimentPanel({ data }: { data: SentimentData }) {
+  const getSentimentColor = (score: number) => {
+    if (score > 0.2) return "text-green-600";
+    if (score < -0.2) return "text-red-600";
+    return "text-gray-600";
   };
 
   return (
     <div>
-      <h4 className="mb-2 text-sm font-medium text-gray-900">{title}</h4>
+      <h4 className="mb-2 text-sm font-medium text-gray-900">Sentiment Analysis</h4>
       <div className="grid grid-cols-2 gap-1 text-xs">
-        {Object.entries(data).map(([key, value]) => (
-          <div key={key} className="flex justify-between">
-            <span className="text-gray-500">{key.replace(/_/g, " ")}:</span>
-            <span className="text-gray-900">{formatValue(key, value)}</span>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Score:</span>
+          <span className={`font-medium ${getSentimentColor(data.score)}`}>
+            {data.score.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Articles:</span>
+          <span className="text-gray-900">{data.article_count}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Positive:</span>
+          <span className="text-green-600">{data.positive_count}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Negative:</span>
+          <span className="text-red-600">{data.negative_count}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Neutral:</span>
+          <span className="text-gray-600">{data.neutral_count}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// News articles panel
+function NewsPanel({
+  articles,
+  provider,
+  fetchedAt,
+}: {
+  articles: NewsArticleSummary[];
+  provider?: string;
+  fetchedAt?: string | null;
+}) {
+  const getSentimentBadge = (label: string | null) => {
+    if (!label) return null;
+    const styles: Record<string, string> = {
+      positive: "bg-green-100 text-green-800",
+      negative: "bg-red-100 text-red-800",
+      neutral: "bg-gray-100 text-gray-600",
+    };
+    return (
+      <span className={`rounded px-1.5 py-0.5 text-xs ${styles[label] || styles.neutral}`}>
+        {label}
+      </span>
+    );
+  };
+
+  return (
+    <div>
+      <PanelHeader title="Recent News" provider={provider} fetchedAt={fetchedAt} />
+      <div className="space-y-2">
+        {articles.map((article, idx) => (
+          <div key={idx} className="rounded bg-gray-50 p-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-blue-600 hover:underline line-clamp-2"
+              >
+                {article.title}
+              </a>
+              {getSentimentBadge(article.sentiment_label)}
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-gray-500">
+              <span>{article.source}</span>
+              <span>-</span>
+              <span>{timeAgo(article.published_at)}</span>
+            </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Fallback for unavailable data
+function DataUnavailable({ message }: { message: string }) {
+  return (
+    <div className="rounded bg-gray-100 p-3 text-center text-sm text-gray-500">
+      {message}
     </div>
   );
 }

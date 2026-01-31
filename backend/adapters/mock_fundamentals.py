@@ -1,6 +1,6 @@
 """Mock fundamentals provider for testing and development."""
 
-from domain.recommendation import FundamentalMetrics
+from domain.recommendation import CompanyInfo, FundamentalMetrics
 
 # Mock fundamental data for test tickers
 MOCK_FUNDAMENTALS = {
@@ -19,6 +19,13 @@ MOCK_FUNDAMENTALS = {
         market_cap=2_800_000_000_000,  # ~2.8T
     ),
     "GOOGL": FundamentalMetrics(
+        pe_ratio=24.8,
+        revenue_growth=0.10,
+        profit_margin=0.22,
+        debt_to_equity=0.1,
+        market_cap=1_800_000_000_000,  # ~1.8T
+    ),
+    "GOOG": FundamentalMetrics(  # Class C shares (same company as GOOGL)
         pe_ratio=24.8,
         revenue_growth=0.10,
         profit_margin=0.22,
@@ -76,6 +83,86 @@ MOCK_FUNDAMENTALS = {
     ),
 }
 
+# Mock company information for test tickers
+MOCK_COMPANY_INFO = {
+    "AAPL": CompanyInfo(
+        name="Apple Inc.",
+        sector="Technology",
+        industry="Consumer Electronics",
+        exchange="NASDAQ",
+    ),
+    "MSFT": CompanyInfo(
+        name="Microsoft Corporation",
+        sector="Technology",
+        industry="Software - Infrastructure",
+        exchange="NASDAQ",
+    ),
+    "GOOGL": CompanyInfo(
+        name="Alphabet Inc.",
+        sector="Technology",
+        industry="Internet Content & Information",
+        exchange="NASDAQ",
+    ),
+    "GOOG": CompanyInfo(  # Class C shares (same company as GOOGL)
+        name="Alphabet Inc.",
+        sector="Technology",
+        industry="Internet Content & Information",
+        exchange="NASDAQ",
+    ),
+    "AMZN": CompanyInfo(
+        name="Amazon.com, Inc.",
+        sector="Consumer Cyclical",
+        industry="Internet Retail",
+        exchange="NASDAQ",
+    ),
+    "NVDA": CompanyInfo(
+        name="NVIDIA Corporation",
+        sector="Technology",
+        industry="Semiconductors",
+        exchange="NASDAQ",
+    ),
+    "META": CompanyInfo(
+        name="Meta Platforms, Inc.",
+        sector="Technology",
+        industry="Internet Content & Information",
+        exchange="NASDAQ",
+    ),
+    "TSLA": CompanyInfo(
+        name="Tesla, Inc.",
+        sector="Consumer Cyclical",
+        industry="Auto Manufacturers",
+        exchange="NASDAQ",
+    ),
+    "JPM": CompanyInfo(
+        name="JPMorgan Chase & Co.",
+        sector="Financial Services",
+        industry="Banks - Diversified",
+        exchange="NYSE",
+    ),
+    "V": CompanyInfo(
+        name="Visa Inc.",
+        sector="Financial Services",
+        industry="Credit Services",
+        exchange="NYSE",
+    ),
+    "JNJ": CompanyInfo(
+        name="Johnson & Johnson",
+        sector="Healthcare",
+        industry="Drug Manufacturers - General",
+        exchange="NYSE",
+    ),
+}
+
+
+def _generate_default_company_info(ticker: str) -> CompanyInfo:
+    """Generate default company info for unknown tickers."""
+    return CompanyInfo(
+        name=f"{ticker} Inc.",
+        sector="Unknown",
+        industry="Unknown",
+        exchange="UNKNOWN",
+    )
+
 
 def _generate_default_fundamentals(ticker: str) -> FundamentalMetrics:
     """Generate default fundamentals for unknown tickers."""
@@ -109,3 +196,19 @@ class MockFundamentalsProvider:
             return MOCK_FUNDAMENTALS[ticker]
 
         return _generate_default_fundamentals(ticker)
+
+    async def get_company_info(self, ticker: str) -> CompanyInfo:
+        """Return mock company information for a ticker.
+
+        Args:
+            ticker: Stock ticker symbol
+
+        Returns:
+            CompanyInfo with mock data
+        """
+        ticker = ticker.upper()
+
+        if ticker in MOCK_COMPANY_INFO:
+            return MOCK_COMPANY_INFO[ticker]
+
+        return _generate_default_company_info(ticker)

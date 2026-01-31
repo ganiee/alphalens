@@ -1,11 +1,22 @@
 """Port interfaces (protocols) for external data providers."""
 
+from datetime import datetime
 from typing import Protocol
+
+from pydantic import BaseModel
 
 from domain.recommendation import (
     FundamentalMetrics,
     SentimentData,
 )
+
+
+class ProviderMetadata(BaseModel):
+    """Metadata about a provider response."""
+
+    provider: str
+    fetched_at: datetime
+    cached: bool = False
 
 
 class PriceBar(Protocol):
@@ -112,12 +123,15 @@ class NewsArticle:
 class NewsProvider(Protocol):
     """Protocol for fetching news articles."""
 
-    async def get_news(self, ticker: str, max_articles: int = 20) -> list[NewsArticle]:
+    async def get_news(
+        self, ticker: str, max_articles: int = 20, company_name: str | None = None
+    ) -> list[NewsArticle]:
         """Fetch recent news articles for a ticker.
 
         Args:
             ticker: Stock ticker symbol
             max_articles: Maximum number of articles to return
+            company_name: Optional company name for better search relevance
 
         Returns:
             List of NewsArticle objects
@@ -155,3 +169,13 @@ class ProviderError(Exception):
         self.ticker = ticker
         self.message = message
         super().__init__(f"{provider} error for {ticker}: {message}")
+
+
+class InvalidTickerError(ProviderError):
+    """Raised when a ticker symbol does not exist or has no data.
+
+    This error should NOT trigger fallback to mock providers.
+    """
+
+    def __init__(self, ticker: str, message: str = "Ticker not found or has no data"):
+        super().__init__("validation", ticker, message)

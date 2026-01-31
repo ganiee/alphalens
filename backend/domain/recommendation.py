@@ -94,14 +94,49 @@ class StockScore(BaseModel):
     allocation_pct: float = Field(ge=0, le=100, description="Recommended allocation percentage")
 
 
+class CompanyInfo(BaseModel):
+    """Company information for a ticker."""
+
+    name: str = "Unknown"
+    sector: str | None = None
+    industry: str | None = None
+    exchange: str | None = None
+    description: str | None = None
+    website: str | None = None
+
+
+class NewsArticleSummary(BaseModel):
+    """Summary of a news article for UI display."""
+
+    title: str
+    source: str
+    published_at: str
+    url: str
+    sentiment_label: str | None = None
+
+
+class ProviderAttribution(BaseModel):
+    """Attribution information for data providers."""
+
+    market_data_provider: str = "unknown"
+    market_data_fetched_at: datetime | None = None
+    fundamentals_provider: str = "unknown"
+    fundamentals_fetched_at: datetime | None = None
+    news_provider: str = "unknown"
+    news_fetched_at: datetime | None = None
+
+
 class EvidencePacket(BaseModel):
     """Raw evidence data used for scoring (stored per run)."""
 
     ticker: str
+    company_info: CompanyInfo = Field(default_factory=CompanyInfo)
     technical: TechnicalIndicators
     fundamental: FundamentalMetrics
     sentiment: SentimentData
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
+    news_articles: list[NewsArticleSummary] = Field(default_factory=list)
+    attribution: ProviderAttribution = Field(default_factory=ProviderAttribution)
 
 
 class RecommendationRequest(BaseModel):
