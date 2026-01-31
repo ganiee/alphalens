@@ -82,18 +82,25 @@ class NewsAPINewsProvider:
             if company_name and company_name != ticker:
                 # Remove common suffixes for cleaner search
                 clean_name = (
-                    company_name.replace(" Inc.", "")
+                    company_name.replace(".Com", "")
+                    .replace(".com", "")
+                    .replace(" Inc.", "")
+                    .replace(" Inc", "")
                     .replace(" Corp.", "")
+                    .replace(" Corp", "")
                     .replace(" Corporation", "")
                     .replace(", Inc.", "")
                     .replace(" Ltd.", "")
+                    .replace(" Ltd", "")
+                    .replace(" LLC", "")
+                    .replace(" PLC", "")
                     .strip()
                 )
-                # Primary: company name with stock context
-                queries_to_try.append(f'"{clean_name}" AND (stock OR shares OR market)')
+                # Primary: company name AND ticker for precise matching
+                queries_to_try.append(f'"{clean_name}" AND {ticker}')
 
             # Fallback: ticker with stock context
-            queries_to_try.append(f"{ticker} stock")
+            queries_to_try.append(f'"{ticker}" AND (stock OR shares OR earnings)')
 
             articles = []
             for search_query in queries_to_try:

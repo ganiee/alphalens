@@ -72,11 +72,11 @@ class TestNewsAPINewsProvider:
         assert result[0].source == "Reuters"
         assert result[0].url == "https://reuters.com/article1"
 
-        # Verify HTTP call - uses ticker + "stock" when no company_name provided
+        # Verify HTTP call - uses ticker + stock context when no company_name provided
         mock_http_client.get.assert_called_once()
         call_args = mock_http_client.get.call_args
         assert call_args[1]["headers"]["X-Api-Key"] == "test-api-key"
-        assert call_args[1]["params"]["q"] == "AAPL stock"
+        assert call_args[1]["params"]["q"] == '"AAPL" AND (stock OR shares OR earnings)'
 
         # Verify cache was updated
         mock_cache.set.assert_called_once()
@@ -105,10 +105,10 @@ class TestNewsAPINewsProvider:
 
         assert len(result) == 1
 
-        # Verify query uses cleaned company name with stock context
+        # Verify query uses cleaned company name AND ticker
         call_args = mock_http_client.get.call_args
         query = call_args[1]["params"]["q"]
-        assert '"Apple" AND (stock OR shares OR market)' == query
+        assert '"Apple" AND AAPL' == query
 
     @pytest.mark.asyncio
     async def test_search_company_name_same_as_ticker(
@@ -126,7 +126,7 @@ class TestNewsAPINewsProvider:
 
         # Should fall back to ticker-based query
         call_args = mock_http_client.get.call_args
-        assert call_args[1]["params"]["q"] == "AAPL stock"
+        assert call_args[1]["params"]["q"] == '"AAPL" AND (stock OR shares OR earnings)'
 
     @pytest.mark.asyncio
     async def test_fallback_to_ticker_when_company_name_returns_empty(
@@ -160,13 +160,13 @@ class TestNewsAPINewsProvider:
         # Should have made two API calls
         assert mock_http_client.get.call_count == 2
 
-        # First call should use company name
+        # First call should use company name AND ticker
         first_call = mock_http_client.get.call_args_list[0]
-        assert '"Alphabet" AND (stock OR shares OR market)' == first_call[1]["params"]["q"]
+        assert '"Alphabet" AND GOOG' == first_call[1]["params"]["q"]
 
-        # Second call should use ticker
+        # Second call should use ticker with stock context
         second_call = mock_http_client.get.call_args_list[1]
-        assert second_call[1]["params"]["q"] == "GOOG stock"
+        assert second_call[1]["params"]["q"] == '"GOOG" AND (stock OR shares OR earnings)'
 
         # Should return results from ticker search
         assert len(result) == 1
