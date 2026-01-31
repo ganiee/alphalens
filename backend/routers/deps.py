@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from adapters.cache import NoOpCache, ProviderCache, SqliteProviderCache
 from adapters.cognito_auth import CognitoAuthVerifier
-from adapters.fmp_fundamentals import FMPFundamentalsProvider
+from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from adapters.http_client import RetryingHttpClient
 from adapters.mock_auth import MockAuthVerifier
 from adapters.mock_fundamentals import MockFundamentalsProvider
@@ -168,16 +168,11 @@ def get_recommendation_service() -> RecommendationService:
     else:
         market_data = MockMarketDataProvider()
 
-    # Fundamentals provider
-    if settings.fmp_api_key:
-        fundamentals = FMPFundamentalsProvider(
-            api_key=settings.fmp_api_key,
-            http_client=http_client,
-            cache=cache,
-            cache_ttl_seconds=settings.fundamentals_cache_ttl_seconds,
-        )
-    else:
-        fundamentals = MockFundamentalsProvider()
+    # Fundamentals provider (yfinance - no API key required)
+    fundamentals = YFinanceFundamentalsProvider(
+        cache=cache,
+        cache_ttl_seconds=settings.fundamentals_cache_ttl_seconds,
+    )
 
     # News provider
     if settings.news_api_key:

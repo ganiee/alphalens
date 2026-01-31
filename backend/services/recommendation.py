@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from adapters.fmp_fundamentals import FMPFundamentalsProvider
+from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from adapters.mock_fundamentals import MockFundamentalsProvider
 from adapters.mock_market_data import MockMarketDataProvider
 from adapters.mock_news import MockNewsProvider
@@ -253,8 +253,8 @@ class RecommendationService:
         """
         if isinstance(provider, PolygonMarketDataProvider):
             return "Polygon"
-        elif isinstance(provider, FMPFundamentalsProvider):
-            return "FMP"
+        elif isinstance(provider, YFinanceFundamentalsProvider):
+            return "Yahoo Finance"
         elif isinstance(provider, NewsAPINewsProvider):
             return "NewsAPI"
         elif isinstance(provider, MockMarketDataProvider):
