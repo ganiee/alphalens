@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
-from domain.providers import PriceHistory, ProviderError
+from domain.providers import InvalidTickerError, PriceHistory, ProviderError
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +83,9 @@ class PolygonMarketDataProvider:
 
             results = data.get("results", [])
             if not results:
-                raise ProviderError(
-                    PROVIDER_NAME,
+                raise InvalidTickerError(
                     ticker,
-                    "No price data available",
+                    f"Ticker '{ticker}' not found or has no trading data",
                 )
 
             # Parse results into PriceHistory
@@ -137,6 +136,8 @@ class PolygonMarketDataProvider:
             logger.info(f"Fetched {len(dates)} price bars for {ticker} from Polygon")
             return price_history
 
+        except InvalidTickerError:
+            raise
         except ProviderError:
             raise
         except Exception as e:

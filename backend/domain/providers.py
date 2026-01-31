@@ -166,3 +166,13 @@ class ProviderError(Exception):
         self.ticker = ticker
         self.message = message
         super().__init__(f"{provider} error for {ticker}: {message}")
+
+
+class InvalidTickerError(ProviderError):
+    """Raised when a ticker symbol does not exist or has no data.
+
+    This error should NOT trigger fallback to mock providers.
+    """
+
+    def __init__(self, ticker: str, message: str = "Ticker not found or has no data"):
+        super().__init__("validation", ticker, message)

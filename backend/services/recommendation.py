@@ -13,6 +13,7 @@ from adapters.polygon_market_data import PolygonMarketDataProvider
 from domain.auth import User
 from domain.providers import (
     FundamentalsProvider,
+    InvalidTickerError,
     MarketDataProvider,
     NewsProvider,
     ProviderError,
@@ -208,9 +209,15 @@ class RecommendationService:
 
         Returns:
             Result from primary or fallback
+
+        Raises:
+            InvalidTickerError: If the ticker does not exist (no fallback)
         """
         try:
             return await primary
+        except InvalidTickerError:
+            # Don't fallback for invalid tickers - let it propagate
+            raise
         except ProviderError as e:
             logger.warning(
                 f"Provider {provider_name} failed, falling back to mock: {e}"

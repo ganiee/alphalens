@@ -8,7 +8,7 @@ import pytest
 
 from adapters.cache import CacheEntry, NoOpCache
 from adapters.polygon_market_data import PolygonMarketDataProvider
-from domain.providers import ProviderError
+from domain.providers import InvalidTickerError, ProviderError
 
 
 @pytest.fixture
@@ -129,8 +129,8 @@ class TestPolygonMarketDataProvider:
         assert "Invalid API key" in exc_info.value.message
 
     @pytest.mark.asyncio
-    async def test_empty_results(self, polygon_provider, mock_http_client):
-        """Test handling of empty results."""
+    async def test_empty_results_raises_invalid_ticker(self, polygon_provider, mock_http_client):
+        """Test that empty results raises InvalidTickerError."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "status": "OK",
@@ -138,10 +138,11 @@ class TestPolygonMarketDataProvider:
         }
         mock_http_client.get.return_value = mock_response
 
-        with pytest.raises(ProviderError) as exc_info:
+        with pytest.raises(InvalidTickerError) as exc_info:
             await polygon_provider.get_price_history("INVALID")
 
-        assert "No price data" in exc_info.value.message
+        assert "INVALID" in exc_info.value.message
+        assert "not found" in exc_info.value.message.lower()
 
     @pytest.mark.asyncio
     async def test_http_error(self, polygon_provider, mock_http_client):
