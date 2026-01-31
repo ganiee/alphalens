@@ -55,7 +55,7 @@ def calculate_technical_score(indicators: TechnicalIndicators) -> float:
     elif indicators.rsi < 40:
         rsi_score = 20  # Approaching oversold
     elif indicators.rsi > 70:
-        rsi_score = 5   # Overbought - sell signal
+        rsi_score = 5  # Overbought - sell signal
     elif indicators.rsi > 60:
         rsi_score = 10  # Approaching overbought
     else:
@@ -71,7 +71,7 @@ def calculate_technical_score(indicators: TechnicalIndicators) -> float:
     elif indicators.macd_histogram > -0.5:
         macd_score = 10  # Weak bearish momentum
     else:
-        macd_score = 5   # Strong bearish momentum
+        macd_score = 5  # Strong bearish momentum
     score += macd_score
 
     # Price vs SMA component (30 points max)
@@ -86,7 +86,7 @@ def calculate_technical_score(indicators: TechnicalIndicators) -> float:
     elif above_sma50:
         sma_score = 15  # Short-term recovery
     else:
-        sma_score = 5   # Downtrend
+        sma_score = 5  # Downtrend
 
     # Golden cross / Death cross bonus
     if indicators.sma_50 > indicators.sma_200:
@@ -101,7 +101,7 @@ def calculate_technical_score(indicators: TechnicalIndicators) -> float:
     elif indicators.volume_trend > 0.8:
         volume_score = 10  # Stable volume
     else:
-        volume_score = 5   # Decreasing volume
+        volume_score = 5  # Decreasing volume
     score += volume_score
 
     return round(score, 2)
@@ -129,7 +129,7 @@ def calculate_fundamental_score(metrics: FundamentalMetrics) -> float:
     # Market average P/E is roughly 20-25
     if metrics.pe_ratio is not None:
         if metrics.pe_ratio < 0:
-            pe_score = 5   # Negative earnings
+            pe_score = 5  # Negative earnings
         elif metrics.pe_ratio < 15:
             pe_score = 25  # Undervalued
         elif metrics.pe_ratio < 25:
@@ -137,7 +137,7 @@ def calculate_fundamental_score(metrics: FundamentalMetrics) -> float:
         elif metrics.pe_ratio < 40:
             pe_score = 12  # Growth premium
         else:
-            pe_score = 5   # Overvalued
+            pe_score = 5  # Overvalued
         score += pe_score
         components += 1
 
@@ -152,7 +152,7 @@ def calculate_fundamental_score(metrics: FundamentalMetrics) -> float:
         elif metrics.revenue_growth > 0:
             growth_score = 10  # Low growth
         else:
-            growth_score = 5   # Declining
+            growth_score = 5  # Declining
         score += growth_score
         components += 1
 
@@ -167,7 +167,7 @@ def calculate_fundamental_score(metrics: FundamentalMetrics) -> float:
         elif metrics.profit_margin > 0:
             margin_score = 10  # Low margins
         else:
-            margin_score = 5   # Unprofitable
+            margin_score = 5  # Unprofitable
         score += margin_score
         components += 1
 
@@ -182,7 +182,7 @@ def calculate_fundamental_score(metrics: FundamentalMetrics) -> float:
         elif metrics.debt_to_equity < 2.0:
             debt_score = 10  # High debt
         else:
-            debt_score = 5   # Very high debt
+            debt_score = 5  # Very high debt
         score += debt_score
         components += 1
 
@@ -239,9 +239,9 @@ def calculate_composite_score(breakdown: ScoreBreakdown) -> float:
         Composite score between 0 and 100
     """
     composite = (
-        breakdown.technical * TECHNICAL_WEIGHT +
-        breakdown.fundamental * FUNDAMENTAL_WEIGHT +
-        breakdown.sentiment * SENTIMENT_WEIGHT
+        breakdown.technical * TECHNICAL_WEIGHT
+        + breakdown.fundamental * FUNDAMENTAL_WEIGHT
+        + breakdown.sentiment * SENTIMENT_WEIGHT
     )
     return round(composite, 2)
 
@@ -272,11 +272,7 @@ def rank_and_allocate(scores: list[tuple[str, ScoreBreakdown]]) -> list[StockSco
     results = []
     for rank, (ticker, breakdown, composite) in enumerate(stock_scores, 1):
         # Proportional allocation
-        allocation = (
-            (composite / total_score) * 100
-            if total_score > 0
-            else 100 / len(stock_scores)
-        )
+        allocation = (composite / total_score) * 100 if total_score > 0 else 100 / len(stock_scores)
 
         results.append(
             StockScore(

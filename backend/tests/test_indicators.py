@@ -1,6 +1,5 @@
 """Tests for technical indicator calculations."""
 
-
 from domain.providers import PriceHistory
 from services.indicators import (
     calculate_ema,

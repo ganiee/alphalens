@@ -1,6 +1,5 @@
 """Tests for scoring algorithms."""
 
-
 from domain.recommendation import (
     FundamentalMetrics,
     ScoreBreakdown,

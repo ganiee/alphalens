@@ -39,9 +39,7 @@ class StockTicker(BaseModel):
         """Validate ticker symbol format."""
         v = v.upper().strip()
         if not re.match(r"^[A-Z]{1,5}$", v):
-            raise ValueError(
-                f"Invalid ticker symbol: {v}. Must be 1-5 uppercase letters."
-            )
+            raise ValueError(f"Invalid ticker symbol: {v}. Must be 1-5 uppercase letters.")
         return v
 
 
@@ -55,24 +53,16 @@ class TechnicalIndicators(BaseModel):
     sma_50: float = Field(description="50-day Simple Moving Average")
     sma_200: float = Field(description="200-day Simple Moving Average")
     current_price: float = Field(gt=0, description="Current stock price")
-    volume_trend: float = Field(
-        description="Volume trend: >1 increasing, <1 decreasing"
-    )
+    volume_trend: float = Field(description="Volume trend: >1 increasing, <1 decreasing")
 
 
 class FundamentalMetrics(BaseModel):
     """Fundamental analysis metrics for a stock."""
 
     pe_ratio: float | None = Field(default=None, description="Price-to-Earnings ratio")
-    revenue_growth: float | None = Field(
-        default=None, description="Year-over-year revenue growth"
-    )
-    profit_margin: float | None = Field(
-        default=None, ge=0, le=1, description="Net profit margin"
-    )
-    debt_to_equity: float | None = Field(
-        default=None, ge=0, description="Debt-to-Equity ratio"
-    )
+    revenue_growth: float | None = Field(default=None, description="Year-over-year revenue growth")
+    profit_margin: float | None = Field(default=None, ge=0, le=1, description="Net profit margin")
+    debt_to_equity: float | None = Field(default=None, ge=0, description="Debt-to-Equity ratio")
     market_cap: float | None = Field(default=None, gt=0, description="Market cap in USD")
 
 
@@ -101,9 +91,7 @@ class StockScore(BaseModel):
     composite_score: float = Field(ge=0, le=100, description="Overall composite score")
     breakdown: ScoreBreakdown
     rank: int = Field(ge=1, description="Rank among analyzed stocks")
-    allocation_pct: float = Field(
-        ge=0, le=100, description="Recommended allocation percentage"
-    )
+    allocation_pct: float = Field(ge=0, le=100, description="Recommended allocation percentage")
 
 
 class EvidencePacket(BaseModel):
@@ -130,9 +118,7 @@ class RecommendationRequest(BaseModel):
         for ticker in v:
             ticker = ticker.upper().strip()
             if not re.match(r"^[A-Z]{1,5}$", ticker):
-                raise ValueError(
-                    f"Invalid ticker symbol: {ticker}. Must be 1-5 uppercase letters."
-                )
+                raise ValueError(f"Invalid ticker symbol: {ticker}. Must be 1-5 uppercase letters.")
             if ticker not in validated:  # Remove duplicates
                 validated.append(ticker)
         return validated

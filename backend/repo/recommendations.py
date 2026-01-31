@@ -1,6 +1,5 @@
 """In-memory repository for recommendation results."""
 
-
 from domain.recommendation import RecommendationResult, RecommendationSummary
 
 
@@ -54,16 +53,13 @@ class RecommendationRepository:
             List of RecommendationSummary objects
         """
         # Filter by user
-        user_results = [
-            r for r in self._storage.values()
-            if r.user_id == user_id
-        ]
+        user_results = [r for r in self._storage.values() if r.user_id == user_id]
 
         # Sort by created_at (newest first)
         user_results.sort(key=lambda r: r.created_at, reverse=True)
 
         # Apply pagination
-        paginated = user_results[offset:offset + limit]
+        paginated = user_results[offset : offset + limit]
 
         # Convert to summaries
         summaries = []

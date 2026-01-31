@@ -5,16 +5,42 @@ from domain.recommendation import SentimentData
 
 # Keywords indicating positive sentiment
 POSITIVE_KEYWORDS = [
-    "record", "beat", "exceed", "growth", "upgrade", "buy",
-    "innovative", "expand", "increase", "strong", "success",
-    "partnership", "opportunity", "momentum", "outperform",
+    "record",
+    "beat",
+    "exceed",
+    "growth",
+    "upgrade",
+    "buy",
+    "innovative",
+    "expand",
+    "increase",
+    "strong",
+    "success",
+    "partnership",
+    "opportunity",
+    "momentum",
+    "outperform",
 ]
 
 # Keywords indicating negative sentiment
 NEGATIVE_KEYWORDS = [
-    "miss", "decline", "downgrade", "sell", "concern", "pressure",
-    "layoff", "investigation", "recall", "loss", "weak", "fail",
-    "regulatory", "lawsuit", "cut", "warning", "underperform",
+    "miss",
+    "decline",
+    "downgrade",
+    "sell",
+    "concern",
+    "pressure",
+    "layoff",
+    "investigation",
+    "recall",
+    "loss",
+    "weak",
+    "fail",
+    "regulatory",
+    "lawsuit",
+    "cut",
+    "warning",
+    "underperform",
 ]
 
 
@@ -41,9 +67,7 @@ def _analyze_article_sentiment(article: NewsArticle) -> float:
 class MockSentimentAnalyzer:
     """Mock implementation of SentimentAnalyzer for testing."""
 
-    async def analyze_sentiment(
-        self, ticker: str, articles: list[NewsArticle]
-    ) -> SentimentData:
+    async def analyze_sentiment(self, ticker: str, articles: list[NewsArticle]) -> SentimentData:
         """Analyze sentiment from news articles.
 
         Args:

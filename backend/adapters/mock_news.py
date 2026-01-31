@@ -65,16 +65,16 @@ def _generate_article(
 
 # Predefined sentiment distribution by ticker
 TICKER_SENTIMENT_BIAS = {
-    "AAPL": 0.6,   # Slightly positive
-    "MSFT": 0.7,   # Positive
+    "AAPL": 0.6,  # Slightly positive
+    "MSFT": 0.7,  # Positive
     "GOOGL": 0.5,  # Neutral
     "AMZN": 0.55,  # Slightly positive
-    "NVDA": 0.8,   # Very positive
-    "META": 0.4,   # Slightly negative
+    "NVDA": 0.8,  # Very positive
+    "META": 0.4,  # Slightly negative
     "TSLA": 0.45,  # Mixed/slightly negative
-    "JPM": 0.5,    # Neutral
-    "V": 0.6,      # Slightly positive
-    "JNJ": 0.55,   # Slightly positive
+    "JPM": 0.5,  # Neutral
+    "V": 0.6,  # Slightly positive
+    "JNJ": 0.55,  # Slightly positive
 }
 
 

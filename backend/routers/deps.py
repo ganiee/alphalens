@@ -124,6 +124,4 @@ def get_recommendation_service() -> RecommendationService:
 
 # Type alias for recommendation dependencies
 RecommendationServiceDep = Annotated[RecommendationService, Depends(get_recommendation_service)]
-RecommendationRepoDep = Annotated[
-    RecommendationRepository, Depends(get_recommendation_repository)
-]
+RecommendationRepoDep = Annotated[RecommendationRepository, Depends(get_recommendation_repository)]

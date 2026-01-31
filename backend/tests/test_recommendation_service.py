@@ -68,9 +68,7 @@ class TestRecommendationService:
         assert result.user_id == free_user.sub
 
     @pytest.mark.asyncio
-    async def test_result_has_scores_for_all_tickers(
-        self, recommendation_service, free_user
-    ):
+    async def test_result_has_scores_for_all_tickers(self, recommendation_service, free_user):
         """Test that result includes scores for all requested tickers."""
         request = RecommendationRequest(
             tickers=["AAPL", "MSFT", "GOOGL"],
@@ -84,9 +82,7 @@ class TestRecommendationService:
         assert tickers_in_result == {"AAPL", "MSFT", "GOOGL"}
 
     @pytest.mark.asyncio
-    async def test_result_has_evidence_packets(
-        self, recommendation_service, free_user
-    ):
+    async def test_result_has_evidence_packets(self, recommendation_service, free_user):
         """Test that result includes evidence for all tickers."""
         request = RecommendationRequest(
             tickers=["AAPL", "MSFT"],
@@ -243,9 +239,7 @@ class TestEvidencePacket:
     """Tests for evidence packet content."""
 
     @pytest.mark.asyncio
-    async def test_evidence_has_technical_indicators(
-        self, recommendation_service, free_user
-    ):
+    async def test_evidence_has_technical_indicators(self, recommendation_service, free_user):
         """Test evidence includes technical indicators."""
         request = RecommendationRequest(
             tickers=["AAPL"],
@@ -261,9 +255,7 @@ class TestEvidencePacket:
         assert evidence.technical.current_price > 0
 
     @pytest.mark.asyncio
-    async def test_evidence_has_fundamentals(
-        self, recommendation_service, free_user
-    ):
+    async def test_evidence_has_fundamentals(self, recommendation_service, free_user):
         """Test evidence includes fundamental metrics."""
         request = RecommendationRequest(
             tickers=["AAPL"],
@@ -277,9 +269,7 @@ class TestEvidencePacket:
         assert evidence.fundamental.revenue_growth is not None
 
     @pytest.mark.asyncio
-    async def test_evidence_has_sentiment(
-        self, recommendation_service, free_user
-    ):
+    async def test_evidence_has_sentiment(self, recommendation_service, free_user):
         """Test evidence includes sentiment data."""
         request = RecommendationRequest(
             tickers=["AAPL"],

@@ -57,9 +57,7 @@ class PriceHistory:
 class MarketDataProvider(Protocol):
     """Protocol for fetching market price data."""
 
-    async def get_price_history(
-        self, ticker: str, days: int = 200
-    ) -> PriceHistory:
+    async def get_price_history(self, ticker: str, days: int = 200) -> PriceHistory:
         """Fetch historical price data for a ticker.
 
         Args:
@@ -133,9 +131,7 @@ class NewsProvider(Protocol):
 class SentimentAnalyzer(Protocol):
     """Protocol for analyzing text sentiment."""
 
-    async def analyze_sentiment(
-        self, ticker: str, articles: list[NewsArticle]
-    ) -> SentimentData:
+    async def analyze_sentiment(self, ticker: str, articles: list[NewsArticle]) -> SentimentData:
         """Analyze sentiment from news articles.
 
         Args:
