@@ -1,32 +1,67 @@
 # AlphaLens Makefile
 # Standardized commands for infrastructure and development
 
-.PHONY: help infra-synth infra-diff infra-deploy infra-destroy backend-dev frontend-dev test lint ci pr
+.PHONY: help dev stop backend-dev frontend-dev \
+        backend-install backend-test backend-lint backend-format \
+        frontend-install frontend-build frontend-lint \
+        test lint ci pr \
+        infra-synth infra-diff infra-deploy infra-destroy hydrate-config
 
 # Default target
 help:
-	@echo "AlphaLens Development Commands"
+	@echo "╔═══════════════════════════════════════════════════════════════════╗"
+	@echo "║                   AlphaLens Development Commands                  ║"
+	@echo "╚═══════════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "Development:"
-	@echo "  make dev           - Start backend + frontend (fresh)"
-	@echo "  make stop          - Stop all services"
-	@echo "  make backend-dev   - Start backend only"
-	@echo "  make frontend-dev  - Start frontend only"
+	@echo "QUICK START"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make dev              Start backend + frontend (fresh)"
+	@echo "  make stop             Stop all services"
 	@echo ""
-	@echo "Testing & CI:"
-	@echo "  make ci            - Run full CI locally (lint + test + build)"
-	@echo "  make test          - Run all tests"
-	@echo "  make lint          - Run linters"
+	@echo "DEVELOPMENT"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make backend-dev      Start backend only (port 8000)"
+	@echo "  make frontend-dev     Start frontend only (port 3000)"
 	@echo ""
-	@echo "Pull Requests:"
-	@echo "  make pr FEATURE=<FeatureID>  - Create PR for feature"
+	@echo "BACKEND"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make backend-install  Install Python dependencies"
+	@echo "  make backend-test     Run pytest"
+	@echo "  make backend-lint     Run ruff linter"
+	@echo "  make backend-format   Format code with ruff"
 	@echo ""
-	@echo "Infrastructure (CDK):"
-	@echo "  make infra-deploy ENV=<env> FEATURE=<FeatureID>  - Deploy infrastructure"
-	@echo "  make infra-destroy ENV=<env> FEATURE=<FeatureID> - Destroy infrastructure"
+	@echo "FRONTEND"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make frontend-install Install npm dependencies"
+	@echo "  make frontend-build   Build for production"
+	@echo "  make frontend-lint    Run ESLint"
 	@echo ""
-	@echo "Config:"
-	@echo "  make hydrate-config ENV=<env>  - Fetch config from SSM"
+	@echo "TESTING & CI"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make ci               Run full CI locally (lint + test + build)"
+	@echo "  make test             Run all tests"
+	@echo "  make lint             Run all linters"
+	@echo ""
+	@echo "PULL REQUESTS"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make pr FEATURE=F1-1  Create PR for feature"
+	@echo ""
+	@echo "INFRASTRUCTURE (CDK)"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make infra-synth   ENV=dev FEATURE=F1-1  Synthesize CloudFormation"
+	@echo "  make infra-diff    ENV=dev FEATURE=F1-1  Show infrastructure diff"
+	@echo "  make infra-deploy  ENV=dev FEATURE=F1-1  Deploy infrastructure"
+	@echo "  make infra-destroy ENV=dev FEATURE=F1-1  Destroy infrastructure"
+	@echo ""
+	@echo "CONFIG"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  make hydrate-config ENV=dev  Fetch config from SSM"
+	@echo ""
+	@echo "LOGS (after make dev)"
+	@echo "───────────────────────────────────────────────────────────────────"
+	@echo "  tail -f /tmp/alphalens-backend.log"
+	@echo "  tail -f /tmp/alphalens-frontend.log"
+	@echo ""
 
 # Environment validation
 ENV ?= dev
@@ -56,8 +91,10 @@ hydrate-config:
 
 # Stop all running services
 stop:
-	@pkill -f "uvicorn" 2>/dev/null || true
-	@pkill -f "next" 2>/dev/null || true
+	@-pkill -x "uvicorn" 2>/dev/null
+	@-pkill -x "node" -f "next-server" 2>/dev/null
+	@-lsof -ti:8000 | xargs kill 2>/dev/null || true
+	@-lsof -ti:3000 | xargs kill 2>/dev/null || true
 	@sleep 1
 	@echo "All services stopped"
 
@@ -71,8 +108,8 @@ frontend-dev:
 # Start everything fresh (stops existing, then starts both)
 dev:
 	@echo "Stopping existing services..."
-	@pkill -f "uvicorn" 2>/dev/null || true
-	@pkill -f "next" 2>/dev/null || true
+	@-lsof -ti:8000 | xargs kill 2>/dev/null || true
+	@-lsof -ti:3000 | xargs kill 2>/dev/null || true
 	@sleep 2
 	@echo "Starting backend..."
 	@cd backend && nohup uvicorn main:app --reload > /tmp/alphalens-backend.log 2>&1 &
