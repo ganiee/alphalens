@@ -1,6 +1,6 @@
 """Tests for the Financial Modeling Prep fundamentals provider."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -102,8 +102,8 @@ class TestFMPFundamentalsProvider:
                 "market_cap": 2500000000000,
             },
             ticker="AAPL",
-            fetched_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            fetched_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
         cache.get.return_value = cached_entry
 

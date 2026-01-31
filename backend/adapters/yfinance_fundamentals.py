@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import yfinance as yf
 
@@ -69,7 +69,7 @@ class YFinanceFundamentalsProvider:
             )
 
             # Cache the result
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,
@@ -88,7 +88,7 @@ class YFinanceFundamentalsProvider:
             raise
         except Exception as e:
             logger.error(f"yfinance error for {ticker}: {e}")
-            raise ProviderError(PROVIDER_NAME, ticker, str(e))
+            raise ProviderError(PROVIDER_NAME, ticker, str(e)) from e
 
     def _fetch_ticker_info(self, ticker: str) -> dict:
         """Fetch ticker info synchronously (called in thread pool)."""

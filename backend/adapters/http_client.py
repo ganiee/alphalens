@@ -79,7 +79,8 @@ class RetryingHttpClient:
                     raise
                 last_error = e
                 logger.warning(
-                    f"Server error {e.response.status_code} (attempt {attempt + 1}/{self.max_retries + 1}): {url}"
+                    f"Server error {e.response.status_code} "
+                    f"(attempt {attempt + 1}/{self.max_retries + 1}): {url}"
                 )
             except httpx.HTTPError as e:
                 last_error = e

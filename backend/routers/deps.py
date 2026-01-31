@@ -8,15 +8,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from adapters.cache import NoOpCache, ProviderCache, SqliteProviderCache
 from adapters.cognito_auth import CognitoAuthVerifier
-from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from adapters.http_client import RetryingHttpClient
 from adapters.mock_auth import MockAuthVerifier
-from adapters.mock_fundamentals import MockFundamentalsProvider
 from adapters.mock_market_data import MockMarketDataProvider
 from adapters.mock_news import MockNewsProvider
 from adapters.mock_sentiment import MockSentimentAnalyzer
 from adapters.newsapi_news import NewsAPINewsProvider
 from adapters.polygon_market_data import PolygonMarketDataProvider
+from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from domain.auth import AuthenticationError, AuthVerifier, TokenPayload, User
 from domain.settings import Settings, get_settings
 from repo.recommendations import RecommendationRepository, get_recommendation_repository

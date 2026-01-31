@@ -1,7 +1,7 @@
 """NewsAPI news provider implementation."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -118,7 +118,7 @@ class NewsAPINewsProvider:
                     )
 
             # Cache the result (even if empty)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,
@@ -137,7 +137,7 @@ class NewsAPINewsProvider:
             raise
         except Exception as e:
             logger.error(f"NewsAPI error for {ticker}: {e}")
-            raise ProviderError(PROVIDER_NAME, ticker, str(e))
+            raise ProviderError(PROVIDER_NAME, ticker, str(e)) from e
 
     async def _fetch_articles(
         self, ticker: str, search_query: str, max_articles: int

@@ -1,7 +1,7 @@
 """Financial Modeling Prep (FMP) fundamentals data provider implementation."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
@@ -82,7 +82,7 @@ class FMPFundamentalsProvider:
             )
 
             # Cache the result
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,
@@ -101,7 +101,7 @@ class FMPFundamentalsProvider:
             raise
         except Exception as e:
             logger.error(f"FMP API error for {ticker}: {e}")
-            raise ProviderError(PROVIDER_NAME, ticker, str(e))
+            raise ProviderError(PROVIDER_NAME, ticker, str(e)) from e
 
     async def get_company_info(self, ticker: str) -> CompanyInfo:
         """Fetch company information from FMP.
@@ -133,7 +133,7 @@ class FMPFundamentalsProvider:
             )
 
             # Cache the result
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,

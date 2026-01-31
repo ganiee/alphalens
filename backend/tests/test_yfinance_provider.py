@@ -1,6 +1,6 @@
 """Tests for the Yahoo Finance fundamentals provider."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -71,8 +71,8 @@ class TestYFinanceFundamentalsProvider:
                 "market_cap": 2800000000000,
             },
             ticker="AAPL",
-            fetched_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            fetched_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
         cache.get.return_value = cached_entry
 
@@ -92,18 +92,19 @@ class TestYFinanceFundamentalsProvider:
 
         with patch.object(
             yfinance_provider, "_fetch_ticker_info", return_value=mock_info
-        ):
-            with pytest.raises(InvalidTickerError) as exc_info:
-                await yfinance_provider.get_fundamentals("INVALIDTICKER")
+        ), pytest.raises(InvalidTickerError) as exc_info:
+            await yfinance_provider.get_fundamentals("INVALIDTICKER")
 
         assert "INVALIDTICKER" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_empty_info(self, yfinance_provider):
         """Test handling of empty info response."""
-        with patch.object(yfinance_provider, "_fetch_ticker_info", return_value={}):
-            with pytest.raises(InvalidTickerError):
-                await yfinance_provider.get_fundamentals("BADTICKER")
+        with (
+            patch.object(yfinance_provider, "_fetch_ticker_info", return_value={}),
+            pytest.raises(InvalidTickerError),
+        ):
+            await yfinance_provider.get_fundamentals("BADTICKER")
 
     @pytest.mark.asyncio
     async def test_handles_null_values(self, yfinance_provider, mock_cache):
@@ -135,9 +136,8 @@ class TestYFinanceFundamentalsProvider:
             yfinance_provider,
             "_fetch_ticker_info",
             side_effect=Exception("Network error"),
-        ):
-            with pytest.raises(ProviderError) as exc_info:
-                await yfinance_provider.get_fundamentals("AAPL")
+        ), pytest.raises(ProviderError) as exc_info:
+            await yfinance_provider.get_fundamentals("AAPL")
 
         assert exc_info.value.provider == "yfinance"
         assert "Network error" in exc_info.value.message

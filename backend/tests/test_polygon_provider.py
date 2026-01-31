@@ -1,12 +1,12 @@
 """Tests for the Polygon.io market data provider."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
 
-from adapters.cache import CacheEntry, NoOpCache
+from adapters.cache import CacheEntry
 from adapters.polygon_market_data import PolygonMarketDataProvider
 from domain.providers import InvalidTickerError, ProviderError
 
@@ -90,8 +90,8 @@ class TestPolygonMarketDataProvider:
                 "volumes": [1000000, 1100000],
             },
             ticker="AAPL",
-            fetched_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            fetched_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         cache.get.return_value = cached_entry
 

@@ -1,7 +1,7 @@
 """Polygon.io market data provider implementation."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
@@ -58,7 +58,7 @@ class PolygonMarketDataProvider:
             return self._deserialize_price_history(cached.data)
 
         # Calculate date range
-        end_date = datetime.now(timezone.utc)
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         # Format dates for API
@@ -101,7 +101,7 @@ class PolygonMarketDataProvider:
                 # Polygon returns timestamp in milliseconds
                 timestamp_ms = bar.get("t", 0)
                 date_str = datetime.fromtimestamp(
-                    timestamp_ms / 1000, tz=timezone.utc
+                    timestamp_ms / 1000, tz=UTC
                 ).strftime("%Y-%m-%d")
 
                 dates.append(date_str)
@@ -122,7 +122,7 @@ class PolygonMarketDataProvider:
             )
 
             # Cache the result
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,
@@ -143,7 +143,7 @@ class PolygonMarketDataProvider:
             raise
         except Exception as e:
             logger.error(f"Polygon API error for {ticker}: {e}")
-            raise ProviderError(PROVIDER_NAME, ticker, str(e))
+            raise ProviderError(PROVIDER_NAME, ticker, str(e)) from e
 
     def _serialize_price_history(self, ph: PriceHistory) -> dict:
         """Serialize PriceHistory for caching."""
@@ -210,7 +210,7 @@ class PolygonMarketDataProvider:
             )
 
             # Cache the result (24 hour TTL for company info)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self.cache.set(
                 CacheEntry(
                     cache_key=cache_key,

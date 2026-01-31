@@ -1,7 +1,7 @@
 """Tests for the provider caching layer."""
 
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -50,8 +50,8 @@ class TestNoOpCache:
             provider="test",
             data={"foo": "bar"},
             ticker="TEST",
-            fetched_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            fetched_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         cache.set(entry)  # Should not raise
 
@@ -79,7 +79,7 @@ class TestSqliteProviderCache:
 
     def test_set_and_get(self, cache):
         """Test storing and retrieving a cache entry."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         entry = CacheEntry(
             cache_key="polygon:price_history:AAPL:days=200",
             provider="polygon",
@@ -105,7 +105,7 @@ class TestSqliteProviderCache:
 
     def test_get_expired_returns_none(self, cache):
         """Test get returns None for expired entries."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         entry = CacheEntry(
             cache_key="polygon:price_history:AAPL:days=200",
             provider="polygon",
@@ -122,7 +122,7 @@ class TestSqliteProviderCache:
 
     def test_delete(self, cache):
         """Test deleting a cache entry."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         entry = CacheEntry(
             cache_key="test:key",
             provider="test",
@@ -140,7 +140,7 @@ class TestSqliteProviderCache:
 
     def test_clear_expired(self, cache):
         """Test clearing expired entries."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Add expired entry
         expired_entry = CacheEntry(
@@ -174,7 +174,7 @@ class TestSqliteProviderCache:
 
     def test_overwrite_existing(self, cache):
         """Test that set overwrites existing entries."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         key = "test:overwrite"
 
         # Set initial value
@@ -207,13 +207,13 @@ class TestSqliteProviderCache:
         """Test that cache directory is created if missing."""
         with tempfile.TemporaryDirectory() as tmpdir:
             nested_path = Path(tmpdir) / "nested" / "dir" / "cache.sqlite"
-            cache = SqliteProviderCache(str(nested_path))
+            SqliteProviderCache(str(nested_path))  # Creates directory on init
 
             assert nested_path.parent.exists()
 
     def test_complex_data_serialization(self, cache):
         """Test caching complex nested data structures."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         complex_data = {
             "ticker": "AAPL",
             "dates": ["2024-01-01", "2024-01-02"],

@@ -1,6 +1,6 @@
 """Tests for the NewsAPI news provider."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -108,7 +108,7 @@ class TestNewsAPINewsProvider:
         # Verify query uses cleaned company name AND ticker
         call_args = mock_http_client.get.call_args
         query = call_args[1]["params"]["q"]
-        assert '"Apple" AND AAPL' == query
+        assert query == '"Apple" AND AAPL'
 
     @pytest.mark.asyncio
     async def test_search_company_name_same_as_ticker(
@@ -162,7 +162,7 @@ class TestNewsAPINewsProvider:
 
         # First call should use company name AND ticker
         first_call = mock_http_client.get.call_args_list[0]
-        assert '"Alphabet" AND GOOG' == first_call[1]["params"]["q"]
+        assert first_call[1]["params"]["q"] == '"Alphabet" AND GOOG'
 
         # Second call should use ticker with stock context
         second_call = mock_http_client.get.call_args_list[1]
@@ -261,8 +261,8 @@ class TestNewsAPINewsProvider:
                 ]
             },
             ticker="AAPL",
-            fetched_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+            fetched_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(minutes=5),
         )
         cache.get.return_value = cached_entry
 

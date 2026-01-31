@@ -2,14 +2,14 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from adapters.mock_fundamentals import MockFundamentalsProvider
 from adapters.mock_market_data import MockMarketDataProvider
 from adapters.mock_news import MockNewsProvider
 from adapters.newsapi_news import NewsAPINewsProvider
 from adapters.polygon_market_data import PolygonMarketDataProvider
+from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from domain.auth import User
 from domain.providers import (
     FundamentalsProvider,
@@ -104,7 +104,7 @@ class RecommendationService:
             horizon=request.horizon,
             scores=stock_scores,
             evidence=evidence_packets,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
 
     async def _fetch_all_data(self, tickers: list[str]) -> list[EvidencePacket]:
@@ -130,7 +130,7 @@ class RecommendationService:
         Returns:
             EvidencePacket with all fetched data
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Initialize attribution tracking
         attribution = ProviderAttribution()
@@ -257,11 +257,9 @@ class RecommendationService:
             return "Yahoo Finance"
         elif isinstance(provider, NewsAPINewsProvider):
             return "NewsAPI"
-        elif isinstance(provider, MockMarketDataProvider):
-            return "mock"
-        elif isinstance(provider, MockFundamentalsProvider):
-            return "mock"
-        elif isinstance(provider, MockNewsProvider):
+        elif isinstance(
+            provider, (MockMarketDataProvider, MockFundamentalsProvider, MockNewsProvider)
+        ):
             return "mock"
         else:
             return "unknown"

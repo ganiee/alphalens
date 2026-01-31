@@ -8,7 +8,7 @@ import json
 import sqlite3
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -134,7 +134,7 @@ class SqliteProviderCache(ProviderCache):
                 return None
 
             expires_at = datetime.fromisoformat(row["expires_at"])
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Check if expired
             if expires_at <= now:
@@ -178,7 +178,7 @@ class SqliteProviderCache(ProviderCache):
 
     def clear_expired(self) -> int:
         """Remove all expired entries. Returns count of deleted entries."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._get_connection() as conn:
             cursor = conn.execute(
                 "DELETE FROM cache_entries WHERE expires_at <= ?", (now,)
