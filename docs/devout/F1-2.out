@@ -1,0 +1,60 @@
+### plan
+  Branch: feature/F1-2-recommendation-engine                                                                         
+                                                                                                                     
+  Documentation created:                                                                                             
+  ┌───────────────┬─────────────────────────────────────────────────────────┐                                        
+  │     File      │                       Description                       │                                        
+  ├───────────────┼─────────────────────────────────────────────────────────┤                                        
+  │ spec.md       │ Architecture, pipeline, scoring algorithm, API design   │                                        
+  ├───────────────┼─────────────────────────────────────────────────────────┤                                        
+  │ tasks.md      │ 10 phases (A-J) with detailed implementation tasks      │                                        
+  ├───────────────┼─────────────────────────────────────────────────────────┤                                        
+  │ acceptance.md │ Acceptance criteria checklist with manual testing guide │                                        
+  ├───────────────┼─────────────────────────────────────────────────────────┤                                        
+  │ tests.md      │ Test coverage plan with fixture specifications          │                                        
+  ├───────────────┼─────────────────────────────────────────────────────────┤                                        
+  │ rollback.md   │ Rollback procedures                                     │                                        
+  └───────────────┴─────────────────────────────────────────────────────────┘                                        
+  Feature index updated: F1-2 status → "In Progress"                                                                 
+                                                                                                                     
+  ---                                                                                                                
+  Summary of F1-2 Scope                                                                                              
+                                                                                                                     
+  What we're building:                                                                                               
+  1. Backend: Recommendation engine with deterministic scoring                                                       
+    - Domain entities: Horizon, StockScore, RecommendationResult, EvidencePacket                                     
+    - Ports: MarketDataProvider, FundamentalsProvider, NewsProvider, SentimentAnalyzer                               
+    - Mock adapters for all providers (no real APIs in MVP)                                                          
+    - Scoring: 40% technical + 30% fundamental + 30% sentiment                                                       
+    - API: POST /analyze, GET /{run_id}, GET /history                                                                
+  2. Frontend: Analysis and results pages                                                                            
+    - /analyze - Ticker input + horizon selector                                                                     
+    - /results/[runId] - Score cards + allocation chart                                                              
+    - /history - Past runs list                                                                                      
+                                                                                                                     
+  Plan constraints enforced:                                                                                         
+  - Free: 3 stocks max, 1M horizon only                                                                              
+  - Pro: 5 stocks max, all horizons                                                                                  
+                                                                                                                     
+  ---                                                                                                                
+  Ready to implement F1-2. Shall I proceed with Phase A (Domain Layer)?        
+
+  ### after dev
+
+    Ready to test manually. Run:                                                                                       
+                                                                                                                     
+  make dev                                                                                                           
+                                                                                                                     
+  Then:                                                                                                              
+  1. Go to http://localhost:3000/login                                                                               
+  2. Select a plan and log in                                                                                        
+  3. Go to Dashboard → "Run Analysis"                                                                                
+  4. Enter tickers (e.g., AAPL, MSFT, GOOGL) and analyze                                                             
+  5. View results with scores and allocations                                                                        
+  6. Check history page                                                                                              
+                                                                                                                     
+  When verified, create the PR with:                                                                                 
+  make pr FEATURE=F1-2                                                                                               
+                           
+
+                           
