@@ -11,4 +11,4 @@
 | F1-6 | 1 | Planned | Admin Dashboard (Users & Usage) | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-7 | 1 | Planned | Cost Tracking (AWS + LLM) | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
 | F1-8 | 1 | Planned | System Metrics & Health | [prd.phase-1.md](prd.phase-1.md) | - | - | - | - | - |
-| F1-9 | 1 | In Progress | Real Data Providers + Caching | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-9-real-data-providers/spec.md) | [tasks](features/F1-9-real-data-providers/tasks.md) | [acceptance](features/F1-9-real-data-providers/acceptance.md) | [tests](features/F1-9-real-data-providers/tests.md) | [rollback](features/F1-9-real-data-providers/rollback.md) |
+| F1-9 | 1 | Complete | Real Data Providers + Caching | [prd.phase-1.md](prd.phase-1.md) | [spec](features/F1-9-real-data-providers/spec.md) | [tasks](features/F1-9-real-data-providers/tasks.md) | [acceptance](features/F1-9-real-data-providers/acceptance.md) | [tests](features/F1-9-real-data-providers/tests.md) | [rollback](features/F1-9-real-data-providers/rollback.md) |
