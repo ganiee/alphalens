@@ -281,3 +281,48 @@ class TestEvidencePacket:
         evidence = result.evidence[0]
         assert evidence.sentiment.score is not None
         assert evidence.sentiment.article_count >= 0
+
+    @pytest.mark.asyncio
+    async def test_evidence_has_attribution(self, recommendation_service, free_user):
+        """Test evidence includes provider attribution."""
+        request = RecommendationRequest(
+            tickers=["AAPL"],
+            horizon=Horizon.ONE_MONTH,
+        )
+
+        result = await recommendation_service.run(request, free_user)
+
+        evidence = result.evidence[0]
+        assert evidence.attribution is not None
+        assert evidence.attribution.market_data_provider == "mock"
+        assert evidence.attribution.fundamentals_provider == "mock"
+        assert evidence.attribution.news_provider == "mock"
+
+    @pytest.mark.asyncio
+    async def test_evidence_has_news_articles(self, recommendation_service, free_user):
+        """Test evidence includes news article summaries."""
+        request = RecommendationRequest(
+            tickers=["AAPL"],
+            horizon=Horizon.ONE_MONTH,
+        )
+
+        result = await recommendation_service.run(request, free_user)
+
+        evidence = result.evidence[0]
+        assert evidence.news_articles is not None
+        assert len(evidence.news_articles) <= 5  # Limited to 5 for UI
+
+    @pytest.mark.asyncio
+    async def test_attribution_timestamps_populated(self, recommendation_service, free_user):
+        """Test that attribution timestamps are populated."""
+        request = RecommendationRequest(
+            tickers=["AAPL"],
+            horizon=Horizon.ONE_MONTH,
+        )
+
+        result = await recommendation_service.run(request, free_user)
+
+        evidence = result.evidence[0]
+        assert evidence.attribution.market_data_fetched_at is not None
+        assert evidence.attribution.fundamentals_fetched_at is not None
+        assert evidence.attribution.news_fetched_at is not None

@@ -1,11 +1,22 @@
 """Port interfaces (protocols) for external data providers."""
 
+from datetime import datetime
 from typing import Protocol
+
+from pydantic import BaseModel
 
 from domain.recommendation import (
     FundamentalMetrics,
     SentimentData,
 )
+
+
+class ProviderMetadata(BaseModel):
+    """Metadata about a provider response."""
+
+    provider: str
+    fetched_at: datetime
+    cached: bool = False
 
 
 class PriceBar(Protocol):

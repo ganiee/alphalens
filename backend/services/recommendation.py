@@ -1,17 +1,27 @@
 """Recommendation service - orchestrates the scoring pipeline."""
 
 import asyncio
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 
+from adapters.fmp_fundamentals import FMPFundamentalsProvider
+from adapters.mock_fundamentals import MockFundamentalsProvider
+from adapters.mock_market_data import MockMarketDataProvider
+from adapters.mock_news import MockNewsProvider
+from adapters.newsapi_news import NewsAPINewsProvider
+from adapters.polygon_market_data import PolygonMarketDataProvider
 from domain.auth import User
 from domain.providers import (
     FundamentalsProvider,
     MarketDataProvider,
     NewsProvider,
+    ProviderError,
     SentimentAnalyzer,
 )
 from domain.recommendation import (
     EvidencePacket,
+    NewsArticleSummary,
+    ProviderAttribution,
     RecommendationRequest,
     RecommendationResult,
     ScoreBreakdown,
@@ -24,6 +34,8 @@ from services.scoring import (
     calculate_technical_score,
     rank_and_allocate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RecommendationService:
@@ -108,18 +120,48 @@ class RecommendationService:
     async def _fetch_ticker_data(self, ticker: str) -> EvidencePacket:
         """Fetch all data for a single ticker.
 
+        Uses fallback to mock providers if real providers fail.
+
         Args:
             ticker: Stock ticker symbol
 
         Returns:
             EvidencePacket with all fetched data
         """
-        # Fetch all data sources in parallel
-        price_history, fundamentals, news_articles = await asyncio.gather(
-            self.market_data.get_price_history(ticker, days=200),
-            self.fundamentals.get_fundamentals(ticker),
-            self.news.get_news(ticker, max_articles=20),
+        now = datetime.now(timezone.utc)
+
+        # Initialize attribution tracking
+        attribution = ProviderAttribution()
+
+        # Fetch price history with fallback
+        price_history = await self._fetch_with_fallback(
+            primary=self.market_data.get_price_history(ticker, days=200),
+            fallback_provider=MockMarketDataProvider(),
+            fallback_call=lambda p: p.get_price_history(ticker, days=200),
+            provider_name=self._get_provider_name(self.market_data),
         )
+        attribution.market_data_provider = self._get_provider_name(self.market_data)
+        attribution.market_data_fetched_at = now
+
+        # Fetch fundamentals with fallback
+        fundamentals = await self._fetch_with_fallback(
+            primary=self.fundamentals.get_fundamentals(ticker),
+            fallback_provider=MockFundamentalsProvider(),
+            fallback_call=lambda p: p.get_fundamentals(ticker),
+            provider_name=self._get_provider_name(self.fundamentals),
+        )
+        attribution.fundamentals_provider = self._get_provider_name(self.fundamentals)
+        attribution.fundamentals_fetched_at = now
+
+        # Fetch news with fallback
+        news_articles = await self._fetch_with_fallback(
+            primary=self.news.get_news(ticker, max_articles=5),
+            fallback_provider=MockNewsProvider(),
+            fallback_call=lambda p: p.get_news(ticker, max_articles=5),
+            provider_name=self._get_provider_name(self.news),
+        )
+        attribution.news_provider = self._get_provider_name(self.news)
+        attribution.news_fetched_at = now
 
         # Compute technical indicators from price history
         technical = compute_technical_indicators(price_history)
@@ -127,13 +169,82 @@ class RecommendationService:
         # Analyze sentiment from news
         sentiment = await self.sentiment.analyze_sentiment(ticker, news_articles)
 
+        # Convert news articles to summaries for UI
+        article_summaries = [
+            NewsArticleSummary(
+                title=article.title,
+                source=article.source,
+                published_at=article.published_at,
+                url=article.url,
+                sentiment_label=getattr(article, "sentiment_label", None),
+            )
+            for article in news_articles[:5]  # Limit to 5 for UI
+        ]
+
         return EvidencePacket(
             ticker=ticker,
             technical=technical,
             fundamental=fundamentals,
             sentiment=sentiment,
-            fetched_at=datetime.utcnow(),
+            fetched_at=now,
+            news_articles=article_summaries,
+            attribution=attribution,
         )
+
+    async def _fetch_with_fallback(
+        self,
+        primary,
+        fallback_provider,
+        fallback_call,
+        provider_name: str,
+    ):
+        """Execute a fetch with fallback to mock provider on failure.
+
+        Args:
+            primary: Primary coroutine to execute
+            fallback_provider: Fallback provider instance
+            fallback_call: Callable to invoke on fallback provider
+            provider_name: Name of the primary provider (for logging)
+
+        Returns:
+            Result from primary or fallback
+        """
+        try:
+            return await primary
+        except ProviderError as e:
+            logger.warning(
+                f"Provider {provider_name} failed, falling back to mock: {e}"
+            )
+            return await fallback_call(fallback_provider)
+        except Exception as e:
+            logger.warning(
+                f"Unexpected error from {provider_name}, falling back to mock: {e}"
+            )
+            return await fallback_call(fallback_provider)
+
+    def _get_provider_name(self, provider) -> str:
+        """Get the display name for a provider.
+
+        Args:
+            provider: Provider instance
+
+        Returns:
+            Human-readable provider name
+        """
+        if isinstance(provider, PolygonMarketDataProvider):
+            return "Polygon"
+        elif isinstance(provider, FMPFundamentalsProvider):
+            return "FMP"
+        elif isinstance(provider, NewsAPINewsProvider):
+            return "NewsAPI"
+        elif isinstance(provider, MockMarketDataProvider):
+            return "mock"
+        elif isinstance(provider, MockFundamentalsProvider):
+            return "mock"
+        elif isinstance(provider, MockNewsProvider):
+            return "mock"
+        else:
+            return "unknown"
 
     def _calculate_scores(self, evidence: EvidencePacket) -> ScoreBreakdown:
         """Calculate all score components for a ticker.
