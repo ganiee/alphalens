@@ -1,0 +1,307 @@
+### Planned
+Here is Claude's plan:                                                                                   
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ F1-9: Real Data Providers + Caching + UI Display                                                         
+                                                                                                          
+ Summary                                                                                                  
+                                                                                                          
+ Replace mock data providers with real APIs (Polygon, FMP, NewsAPI), add SQLite caching layer, and        
+ enhance UI to show provider attribution and data freshness.                                              
+                                                                                                          
+ ---                                                                                                      
+ Phase A: Settings & Configuration                                                                        
+                                                                                                          
+ A1. Extend Settings (backend/domain/settings.py)                                                         
+                                                                                                          
+ Add new fields:                                                                                          
+ # API Keys                                                                                               
+ fmp_api_key: str = ""                                                                                    
+ polygon_api_key: str = ""                                                                                
+ news_api_key: str = ""                                                                                   
+ news_api_base_url: str = "https://newsapi.org/v2"                                                        
+ news_api_country: str = "us"                                                                             
+ news_api_page_size: int = 8                                                                              
+                                                                                                          
+ # Cache Configuration                                                                                    
+ provider_cache_enabled: bool = True                                                                      
+ provider_cache_backend: str = "sqlite"                                                                   
+ provider_cache_dir: str = ".cache/alphalens"                                                             
+ provider_cache_db_path: str = ".cache/alphalens/cache.sqlite"                                            
+ market_cache_ttl_seconds: int = 60                                                                       
+ fundamentals_cache_ttl_seconds: int = 86400                                                              
+ news_cache_ttl_seconds: int = 300                                                                        
+                                                                                                          
+ # HTTP Client                                                                                            
+ http_timeout_seconds: int = 10                                                                           
+ http_max_retries: int = 2                                                                                
+ http_retry_backoff_seconds: float = 0.5                                                                  
+                                                                                                          
+ A2. Update .env.example files                                                                            
+                                                                                                          
+ - Backend: Add all new env vars with placeholder comments                                                
+ - Frontend: No changes needed (backend-only config)                                                      
+                                                                                                          
+ ---                                                                                                      
+ Phase B: Caching Layer                                                                                   
+                                                                                                          
+ B1. Create backend/adapters/cache.py                                                                     
+                                                                                                          
+ - CacheEntry model: cache_key, provider, data, ticker, fetched_at, expires_at                            
+ - ProviderCache protocol with get/set/delete/clear_expired                                               
+ - SqliteProviderCache implementation (recommended)                                                       
+ - NoOpCache for disabled caching                                                                         
+                                                                                                          
+ Cache key format:                                                                                        
+ - polygon:price_history:{ticker}:{days}                                                                  
+ - fmp:fundamentals:{ticker}                                                                              
+ - newsapi:news:{ticker}:{max_articles}                                                                   
+                                                                                                          
+ B2. Create backend/adapters/http_client.py                                                               
+                                                                                                          
+ - RetryingHttpClient with configurable timeout, retries, backoff                                         
+ - Wraps httpx.AsyncClient                                                                                
+                                                                                                          
+ ---                                                                                                      
+ Phase C: Real Data Providers                                                                             
+                                                                                                          
+ C1. Create backend/adapters/polygon_market_data.py                                                       
+                                                                                                          
+ - Implements MarketDataProvider protocol                                                                 
+ - Endpoint: GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}                                         
+ - Returns PriceHistory with OHLCV data                                                                   
+ - Caches responses with TTL                                                                              
+                                                                                                          
+ C2. Create backend/adapters/fmp_fundamentals.py                                                          
+                                                                                                          
+ - Implements FundamentalsProvider protocol                                                               
+ - Endpoints: /profile/{ticker}, /ratios-ttm/{ticker}, /key-metrics-ttm/{ticker}                          
+ - Returns FundamentalMetrics with PE, margins, growth, debt ratio, market cap                            
+ - Caches responses with 24hr TTL                                                                         
+                                                                                                          
+ C3. Create backend/adapters/newsapi_news.py                                                              
+                                                                                                          
+ - Implements NewsProvider protocol                                                                       
+ - Endpoint: /v2/everything?q={ticker}&sortBy=publishedAt                                                 
+ - Returns list of NewsArticle (max 5 for UI)                                                             
+ - Adds simple sentiment label (positive/negative/neutral) based on keywords                              
+ - Caches responses with 5min TTL                                                                         
+                                                                                                          
+ ---                                                                                                      
+ Phase D: Domain Model Extensions                                                                         
+                                                                                                          
+ D1. Extend backend/domain/providers.py                                                                   
+                                                                                                          
+ Add:                                                                                                     
+ class ProviderMetadata(BaseModel):                                                                       
+     provider: str                                                                                        
+     fetched_at: datetime                                                                                 
+     cached: bool = False                                                                                 
+                                                                                                          
+ D2. Extend backend/domain/recommendation.py                                                              
+                                                                                                          
+ Add:                                                                                                     
+ class NewsArticleSummary(BaseModel):                                                                     
+     title: str                                                                                           
+     source: str                                                                                          
+     published_at: str                                                                                    
+     url: str                                                                                             
+     sentiment_label: str | None = None                                                                   
+                                                                                                          
+ class ProviderAttribution(BaseModel):                                                                    
+     market_data_provider: str = "unknown"                                                                
+     market_data_fetched_at: datetime | None = None                                                       
+     fundamentals_provider: str = "unknown"                                                               
+     fundamentals_fetched_at: datetime | None = None                                                      
+     news_provider: str = "unknown"                                                                       
+     news_fetched_at: datetime | None = None                                                              
+                                                                                                          
+ # Update EvidencePacket to include:                                                                      
+ news_articles: list[NewsArticleSummary] = []                                                             
+ attribution: ProviderAttribution                                                                         
+                                                                                                          
+ ---                                                                                                      
+ Phase E: Dependency Injection                                                                            
+                                                                                                          
+ E1. Update backend/routers/deps.py                                                                       
+                                                                                                          
+ - Add get_provider_cache() - returns SqliteProviderCache or NoOpCache                                    
+ - Add get_http_client() - returns shared RetryingHttpClient                                              
+ - Update get_recommendation_service() to use real providers when API keys present, fallback to mock      
+ otherwise                                                                                                
+                                                                                                          
+ ---                                                                                                      
+ Phase F: Service Layer Updates                                                                           
+                                                                                                          
+ F1. Update backend/services/recommendation.py                                                            
+                                                                                                          
+ - Add fallback logic: try real provider, catch ProviderError, fall back to mock                          
+ - Populate ProviderAttribution with actual provider names and timestamps                                 
+ - Populate news_articles in EvidencePacket for UI display                                                
+                                                                                                          
+ ---                                                                                                      
+ Phase G: Frontend Updates                                                                                
+                                                                                                          
+ G1. Extend frontend/lib/api.ts                                                                           
+                                                                                                          
+ Add TypeScript interfaces:                                                                               
+ - NewsArticleSummary                                                                                     
+ - ProviderAttribution                                                                                    
+ - Update EvidencePacket to include new fields                                                            
+                                                                                                          
+ G2. Update frontend/app/results/[runId]/page.tsx                                                         
+                                                                                                          
+ Add components:                                                                                          
+ - ProviderBadge - colored badge showing provider name (Polygon, FMP, NewsAPI)                            
+ - timeAgo() helper - "5 min ago" format                                                                  
+ - TechnicalPanel - existing tech data + provider badge + timestamp                                       
+ - FundamentalsPanel - existing fundamentals + provider badge + timestamp                                 
+ - NewsPanel - up to 5 articles with title, source, time, URL, sentiment label                            
+ - DataUnavailable - graceful fallback when provider fails                                                
+                                                                                                          
+ ---                                                                                                      
+ Phase H: Tests                                                                                           
+                                                                                                          
+ H1. Create backend/tests/test_cache.py                                                                   
+                                                                                                          
+ - Test set/get operations                                                                                
+ - Test TTL expiration                                                                                    
+ - Test cache miss returns None                                                                           
+                                                                                                          
+ H2. Create backend/tests/test_polygon_provider.py                                                        
+                                                                                                          
+ - Mock HTTP responses                                                                                    
+ - Test successful fetch                                                                                  
+ - Test API error handling                                                                                
+                                                                                                          
+ H3. Create backend/tests/test_fmp_provider.py                                                            
+                                                                                                          
+ - Mock HTTP responses                                                                                    
+ - Test fundamentals mapping                                                                              
+                                                                                                          
+ H4. Create backend/tests/test_newsapi_provider.py                                                        
+                                                                                                          
+ - Mock HTTP responses                                                                                    
+ - Test news article parsing                                                                              
+ - Test sentiment labeling                                                                                
+                                                                                                          
+ H5. Update backend/tests/test_recommendation_service.py                                                  
+                                                                                                          
+ - Test fallback to mock on provider failure                                                              
+ - Test attribution populated correctly                                                                   
+                                                                                                          
+ ---                                                                                                      
+ Phase I: Documentation                                                                                   
+                                                                                                          
+ I1. Create feature docs                                                                                  
+                                                                                                          
+ docs/features/F1-9-real-data-providers/                                                                  
+ ├── spec.md                                                                                              
+ ├── tasks.md                                                                                             
+ ├── tests.md                                                                                             
+ ├── acceptance.md                                                                                        
+ └── rollback.md                                                                                          
+                                                                                                          
+ I2. Update docs/feature.index.md                                                                         
+                                                                                                          
+ - Add F1-9 row with status "In Progress"                                                                 
+                                                                                                          
+ ---                                                                                                      
+ Files to Create                                                                                          
+                                                                                                          
+ - backend/adapters/cache.py                                                                              
+ - backend/adapters/http_client.py                                                                        
+ - backend/adapters/polygon_market_data.py                                                                
+ - backend/adapters/fmp_fundamentals.py                                                                   
+ - backend/adapters/newsapi_news.py                                                                       
+ - backend/tests/test_cache.py                                                                            
+ - backend/tests/test_polygon_provider.py                                                                 
+ - backend/tests/test_fmp_provider.py                                                                     
+ - backend/tests/test_newsapi_provider.py                                                                 
+ - docs/features/F1-9-real-data-providers/*.md (5 files)                                                  
+                                                                                                          
+ Files to Modify                                                                                          
+                                                                                                          
+ - backend/domain/settings.py                                                                             
+ - backend/domain/providers.py                                                                            
+ - backend/domain/recommendation.py                                                                       
+ - backend/routers/deps.py                                                                                
+ - backend/services/recommendation.py                                                                     
+ - backend/.env.example                                                                                   
+ - frontend/lib/api.ts                                                                                    
+ - frontend/app/results/[runId]/page.tsx                                                                  
+ - docs/feature.index.md                                                                                  
+                                                                                                          
+ ---                                                                                                      
+ Verification                                                                                             
+                                                                                                          
+ 1. Backend tests pass:                                                                                   
+ cd backend && AUTH_MODE=mock pytest -v                                                                   
+ 2. Manual test with mock (no API keys):                                                                  
+ make dev                                                                                                 
+ # Open http://localhost:3000, analyze stocks                                                             
+ # Should show "mock" provider badges                                                                     
+ 3. Manual test with real APIs:                                                                           
+ # Set API keys in .env                                                                                   
+ POLYGON_API_KEY=xxx                                                                                      
+ FMP_API_KEY=xxx                                                                                          
+ NEWS_API_KEY=xxx                                                                                         
+                                                                                                          
+ make dev                                                                                                 
+ # Analyze stocks, verify real data with provider badges                                                  
+ 4. Cache verification:                                                                                   
+ # First request: check .cache/alphalens/cache.sqlite created                                             
+ # Second request: should be faster (cached)                                                              
+                                                                                                          
+ ---                                                                                                      
+ Rollback                                                                                                 
+                                                                                                          
+ - Set API keys to empty strings                                                                          
+ - System falls back to mock providers automatically                                                      
+ - No database migrations to reverse                                                                      
+ - Cache is ephemeral (can delete .cache directory)      
+
+ ### env files
+ ❯ provide all the keys I need to update in .env for this feature F1-9 to work                             
+                                                                                                          
+● Here are the keys you need to add to your .env file for F1-9:                                           
+                                                                                                          
+  # Data Provider API Keys (required for real data)                                                       
+  POLYGON_API_KEY=your_polygon_key_here                                                                   
+  FMP_API_KEY=your_fmp_key_here                                                                           
+  NEWS_API_KEY=your_newsapi_key_here                                                                      
+                                                                                                          
+  # Optional - these have sensible defaults                                                               
+  NEWS_API_BASE_URL=https://newsapi.org/v2                                                                
+  NEWS_API_COUNTRY=us                                                                                     
+  NEWS_API_PAGE_SIZE=8                                                                                    
+                                                                                                          
+  # Cache Configuration (optional - defaults shown)                                                       
+  PROVIDER_CACHE_ENABLED=true                                                                             
+  PROVIDER_CACHE_BACKEND=sqlite                                                                           
+  PROVIDER_CACHE_DIR=.cache/alphalens                                                                     
+  PROVIDER_CACHE_DB_PATH=.cache/alphalens/cache.sqlite                                                    
+  MARKET_CACHE_TTL_SECONDS=60                                                                             
+  FUNDAMENTALS_CACHE_TTL_SECONDS=86400                                                                    
+  NEWS_CACHE_TTL_SECONDS=300                                                                              
+                                                                                                          
+  # HTTP Client (optional - defaults shown)                                                               
+  HTTP_TIMEOUT_SECONDS=10                                                                                 
+  HTTP_MAX_RETRIES=2                                                                                      
+  HTTP_RETRY_BACKOFF_SECONDS=0.5                                                                          
+                                                                                                          
+  Where to get the API keys:                                                                              
+  ┌────────────┬───────────────────────────────────────────────────┬──────────────────┐                   
+  │  Provider  │                    Sign Up URL                    │    Free Tier     │                   
+  ├────────────┼───────────────────────────────────────────────────┼──────────────────┤                   
+  │ Polygon.io │ https://polygon.io/                               │ 5 API calls/min  │                   
+  ├────────────┼───────────────────────────────────────────────────┼──────────────────┤                   
+  │ FMP        │ https://financialmodelingprep.com/developer/docs/ │ 250 calls/day    │                   
+  ├────────────┼───────────────────────────────────────────────────┼──────────────────┤                   
+  │ NewsAPI    │ https://newsapi.org/                              │ 100 requests/day │                   
+  └────────────┴───────────────────────────────────────────────────┴──────────────────┘                   
+  Minimum required for real data:                                                                         
+  POLYGON_API_KEY=xxx                                                                                     
+  FMP_API_KEY=xxx                                                                                         
+  NEWS_API_KEY=xxx                                                                                        
+                                                                                                          
+  If any key is left empty, that provider will use mock data automatically.  
