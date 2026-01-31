@@ -23,7 +23,7 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user, accessToken, logout } = useAuth();
+  const { user, accessToken } = useAuth();
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,13 +84,8 @@ function DashboardContent() {
     fetchUserInfo();
   }, [accessToken, user]);
 
-  const handleLogout = async () => {
-    // Clear selected plan on logout
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("selectedPlan");
-    }
-    await logout();
-    router.push("/");
+  const handleLogout = () => {
+    router.push("/signout");
   };
 
   if (isLoading) {

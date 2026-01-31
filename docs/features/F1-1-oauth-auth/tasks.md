@@ -27,6 +27,7 @@
 - [x] Create `app/login/page.tsx` with plan cards (Free/Pro) and Hosted UI redirect
 - [x] Update `app/register/page.tsx` to redirect to /login (Hosted UI handles registration)
 - [x] Create `app/dashboard/page.tsx` as protected route with plan display
+- [x] Create `app/signout/page.tsx` to clear all auth state and redirect to login
 - [x] Create `components/protected-route.tsx` HOC
 
 ### Phase E: Configuration & Documentation

@@ -47,8 +47,16 @@ Before testing, complete the AWS setup:
 - [x] Shows selected plan (Free or Pro)
 - [x] Shows user roles
 - [x] Shows email verification status
-- [x] Sign Out button works
+- [x] Sign Out button works (redirects to /signout)
 - [x] Disclaimer displayed
+
+### Sign Out (/signout)
+
+- [x] Clears localStorage
+- [x] Clears sessionStorage
+- [x] Signs out from Cognito globally
+- [x] Redirects to /login after completion
+- [x] Direct access to /signout clears stale sessions
 
 ### Security
 

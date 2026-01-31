@@ -345,3 +345,114 @@ A feature may be marked Done only when:
 - Phase PRDs define which screens exist.
 - Feature PRDs define the contract for each screen they touch.
 
+20. Infrastructure as Code Governance (MANDATORY)
+
+20.1 IaC Tooling (Strict)
+    • All AWS infrastructure MUST be provisioned using AWS CDK.
+    • Manual AWS Console changes are prohibited except for emergency debugging.
+    • Any emergency manual change MUST be captured back into CDK within 48 hours.
+
+20.2 Infra Folder Contract (Feature-Scoped)
+    • All infrastructure code MUST live under /infra.
+    • Infra is organized as:
+        ○ /infra/shared/ → shared platform infra (VPC, base IAM, logging)
+        ○ /infra/features/<FeatureID>-<short-name>/ → feature-owned infra
+    • Each Feature ID owns its infra module exclusively.
+    • Feature infra MUST NOT modify shared infra directly.
+
+20.3 Stack Naming Convention
+    • All stacks MUST follow:
+        alphalens-<env>-<FeatureID>-<purpose>
+    • Examples:
+        ○ alphalens-dev-F1-1-cognito
+        ○ alphalens-prod-F3-2-dynamodb
+    • Environments allowed:
+        ○ dev
+        ○ stage
+        ○ prod
+
+20.4 Infra Ownership Rule
+    • Every infra stack MUST be owned by exactly one Feature ID.
+    • Infra stacks MAY NOT be modified by unrelated features without explicit documentation.
+
+20.5 Canonical Infra Mapping Index
+    • docs/infra/infra-index.md is the single source of truth mapping:
+        Feature ID → Infra module → Stack(s) → Outputs → Consumers
+    • The file MUST contain the following table columns:
+
+| Column | Description |
+|--------|-------------|
+| Feature ID | Owner feature in format F<phase>-<number> |
+| Stack Name | Full stack name following naming convention |
+| Module Path | Path to CDK module under /infra |
+| Purpose | Brief description of what the stack provisions |
+| Key Outputs | CloudFormation outputs or SSM parameters |
+| Consumed By | Features or components that use these outputs |
+| Deploy Command | make command to deploy |
+| Rollback Command | make command to destroy/rollback |
+
+    • Any feature that creates or modifies infrastructure MUST add or update an entry.
+    • Infra changes are invalid if this index is not updated.
+
+20.6 Infra Outputs & Config Hydration Contract
+    • Infra stacks MUST expose required values via:
+        ○ CloudFormation Outputs
+        ○ AWS SSM Parameter Store (preferred)
+    • Application config files (auth.yaml, .env) MUST derive values from infra outputs.
+    • Manual copy/paste of infra identifiers is discouraged long-term.
+    • Config hydration from SSM via scripts is the recommended pattern.
+    • Example SSM output paths:
+        /alphalens/<env>/auth/userPoolId
+        /alphalens/<env>/auth/clientId
+        /alphalens/<env>/auth/issuer
+        /alphalens/<env>/auth/domain
+
+20.7 Infra-to-Feature Governance (Hard Gating)
+    • Any feature introducing or modifying infra MUST:
+        ○ Declare its infra module path
+        ○ Add/update its entry in docs/infra/infra-index.md
+        ○ Reference infra in spec.md and rollback.md
+    • A feature may NOT be marked Complete unless infra mapping is present.
+    • Optionally, an Infra column MAY be added to docs/feature-index.md.
+
+20.8 Infrastructure CI Enforcement (MANDATORY)
+CI Validation Rules
+    • CI MUST fail if:
+        ○ Infra code under /infra/features/<FeatureID>/ is modified
+        ○ AND docs/infra/infra-index.md is not updated
+    • CI MUST fail if:
+        ○ A feature is marked Complete
+        ○ AND required infra documentation is missing
+
+CI Responsibilities
+    • CI MUST verify:
+        ○ Stack naming follows convention
+        ○ Infra module path matches Feature ID
+        ○ Feature docs reference infra where applicable
+
+CI Is Authoritative
+    • CI failures BLOCK merge
+    • CI enforcement applies equally to humans and AI agents
+
+20.9 Deterministic Infra Execution Interface
+    • Standardized infra commands:
+        make infra-synth ENV=<env> FEATURE=<FeatureID>
+        make infra-diff ENV=<env> FEATURE=<FeatureID>
+        make infra-deploy ENV=<env> FEATURE=<FeatureID>
+        make infra-destroy ENV=<env> FEATURE=<FeatureID>
+    • Infra MUST be deployable using these commands.
+    • Claude MUST NOT invent custom deployment steps.
+
+20.10 Non-Normative Example: F1-1 Cognito (Reference Only)
+    Feature F1-1 (OAuth Authentication & Roles) owns:
+        • Cognito User Pool
+        • Public App Client (PKCE)
+        • Hosted UI Domain
+        • OAuth Providers (Google optional)
+
+    Example stack: alphalens-dev-F1-1-cognito
+
+    Outputs consumed by frontend login flow and backend JWT verification.
+
+    This example is illustrative and non-normative.
+

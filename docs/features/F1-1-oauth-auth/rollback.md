@@ -21,6 +21,7 @@ This document describes how to rollback F1-1 authentication changes if needed.
 - `frontend/app/providers.tsx`
 - `frontend/app/login/page.tsx`
 - `frontend/app/register/page.tsx`
+- `frontend/app/signout/page.tsx`
 - `frontend/app/dashboard/page.tsx`
 - `frontend/components/protected-route.tsx`
 
@@ -81,12 +82,29 @@ Change F1-1 status back to "Planned" and remove doc links
 git revert <commit-hash>
 ```
 
-## AWS Resources
+## Infrastructure Rollback
 
-If Cognito User Pool was created, it can be deleted via AWS Console:
+### CDK Destroy Command
+```bash
+make infra-destroy ENV=dev FEATURE=F1-1
+```
+
+This will delete:
+- Cognito User Pool
+- Cognito App Client
+- Cognito Hosted UI Domain
+- SSM Parameters (`/alphalens/dev/auth/*`)
+
+### Manual AWS Console Rollback (if CDK fails)
 1. Go to Cognito > User Pools
 2. Select the alphalens user pool
 3. Delete (this is safe if no production users exist)
+4. Go to Systems Manager > Parameter Store
+5. Delete parameters under `/alphalens/dev/auth/`
+
+### Infrastructure Files to Remove
+- `/infra/features/F1-1-oauth-auth/` (entire directory)
+- Update `/docs/infra/infra-index.md` to remove F1-1 entry
 
 ## Verification After Rollback
 
@@ -95,3 +113,4 @@ If Cognito User Pool was created, it can be deleted via AWS Console:
 3. No auth endpoints exist: `curl http://localhost:8000/auth/me` returns 404
 4. Frontend builds: `npm run build`
 5. All original tests pass
+6. CDK stack no longer exists: `aws cloudformation describe-stacks --stack-name alphalens-dev-F1-1-cognito` returns error

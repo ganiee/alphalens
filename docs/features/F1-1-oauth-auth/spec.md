@@ -49,6 +49,7 @@ This feature implements user authentication using Amazon Cognito with:
 - `/login` - Plan selection cards + Continue button → Hosted UI
 - `/register` - Redirects to `/login` (Hosted UI handles registration)
 - `/dashboard` - Protected user dashboard showing plan info
+- `/signout` - Clears all auth state (localStorage, sessionStorage, Cognito) and redirects to login
 
 ## UI Contract
 
@@ -85,3 +86,34 @@ Environment variables:
 ### Frontend
 - `aws-amplify` - Cognito SDK with Hosted UI support
 - `@aws-amplify/adapter-nextjs` - Next.js SSR support
+
+## Infrastructure
+
+### Stack Information
+- **Stack Name**: `alphalens-<env>-F1-1-cognito`
+- **Module Path**: `/infra/features/F1-1-oauth-auth/`
+- **CDK File**: `stack.ts`
+
+### Resources Provisioned
+- Cognito User Pool
+- Cognito App Client (public, PKCE)
+- Cognito Hosted UI Domain
+- User Groups: `admin`, `pro`
+- SSM Parameters for config hydration
+
+### SSM Parameters
+- `/alphalens/<env>/auth/userPoolId`
+- `/alphalens/<env>/auth/clientId`
+- `/alphalens/<env>/auth/domain`
+- `/alphalens/<env>/auth/region`
+
+### Deploy Commands
+```bash
+make infra-deploy ENV=dev FEATURE=F1-1
+make infra-destroy ENV=dev FEATURE=F1-1
+```
+
+### Config Hydration
+```bash
+make hydrate-config ENV=dev
+```
