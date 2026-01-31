@@ -67,9 +67,7 @@ class NewsAPINewsProvider:
             ProviderError: If news cannot be fetched
         """
         # Check cache first
-        cache_key = make_cache_key(
-            PROVIDER_NAME, "news", ticker, max_articles=max_articles
-        )
+        cache_key = make_cache_key(PROVIDER_NAME, "news", ticker, max_articles=max_articles)
         cached = self.cache.get(cache_key)
         if cached:
             logger.debug(f"Cache hit for {cache_key}")
@@ -113,9 +111,7 @@ class NewsAPINewsProvider:
                     )
                     break
                 else:
-                    logger.debug(
-                        f"No results for {ticker} with query: {search_query}, trying next"
-                    )
+                    logger.debug(f"No results for {ticker} with query: {search_query}, trying next")
 
             # Cache the result (even if empty)
             now = datetime.now(UTC)

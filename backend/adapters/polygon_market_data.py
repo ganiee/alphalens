@@ -100,9 +100,7 @@ class PolygonMarketDataProvider:
             for bar in results:
                 # Polygon returns timestamp in milliseconds
                 timestamp_ms = bar.get("t", 0)
-                date_str = datetime.fromtimestamp(
-                    timestamp_ms / 1000, tz=UTC
-                ).strftime("%Y-%m-%d")
+                date_str = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
 
                 dates.append(date_str)
                 opens.append(float(bar.get("o", 0)))

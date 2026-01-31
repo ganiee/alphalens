@@ -42,9 +42,7 @@ class TestYFinanceFundamentalsProvider:
             "marketCap": 2500000000000,
         }
 
-        with patch.object(
-            yfinance_provider, "_fetch_ticker_info", return_value=mock_info
-        ):
+        with patch.object(yfinance_provider, "_fetch_ticker_info", return_value=mock_info):
             result = await yfinance_provider.get_fundamentals("AAPL")
 
         assert result.pe_ratio == 25.5
@@ -90,9 +88,10 @@ class TestYFinanceFundamentalsProvider:
         """Test handling of invalid ticker."""
         mock_info = {"regularMarketPrice": None}
 
-        with patch.object(
-            yfinance_provider, "_fetch_ticker_info", return_value=mock_info
-        ), pytest.raises(InvalidTickerError) as exc_info:
+        with (
+            patch.object(yfinance_provider, "_fetch_ticker_info", return_value=mock_info),
+            pytest.raises(InvalidTickerError) as exc_info,
+        ):
             await yfinance_provider.get_fundamentals("INVALIDTICKER")
 
         assert "INVALIDTICKER" in str(exc_info.value)
@@ -118,9 +117,7 @@ class TestYFinanceFundamentalsProvider:
             "marketCap": 500000000000,
         }
 
-        with patch.object(
-            yfinance_provider, "_fetch_ticker_info", return_value=mock_info
-        ):
+        with patch.object(yfinance_provider, "_fetch_ticker_info", return_value=mock_info):
             result = await yfinance_provider.get_fundamentals("TEST")
 
         assert result.pe_ratio is None
@@ -132,11 +129,14 @@ class TestYFinanceFundamentalsProvider:
     @pytest.mark.asyncio
     async def test_exception_handling(self, yfinance_provider):
         """Test handling of exceptions."""
-        with patch.object(
-            yfinance_provider,
-            "_fetch_ticker_info",
-            side_effect=Exception("Network error"),
-        ), pytest.raises(ProviderError) as exc_info:
+        with (
+            patch.object(
+                yfinance_provider,
+                "_fetch_ticker_info",
+                side_effect=Exception("Network error"),
+            ),
+            pytest.raises(ProviderError) as exc_info,
+        ):
             await yfinance_provider.get_fundamentals("AAPL")
 
         assert exc_info.value.provider == "yfinance"

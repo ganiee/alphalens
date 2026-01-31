@@ -180,9 +180,7 @@ class SqliteProviderCache(ProviderCache):
         """Remove all expired entries. Returns count of deleted entries."""
         now = datetime.now(UTC).isoformat()
         with self._get_connection() as conn:
-            cursor = conn.execute(
-                "DELETE FROM cache_entries WHERE expires_at <= ?", (now,)
-            )
+            cursor = conn.execute("DELETE FROM cache_entries WHERE expires_at <= ?", (now,))
             conn.commit()
             return cursor.rowcount
 

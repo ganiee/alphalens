@@ -44,9 +44,7 @@ class TestFMPFundamentalsProvider:
         """Test successful fundamentals fetch combining multiple endpoints."""
         # Mock responses for each endpoint
         profile_response = MagicMock()
-        profile_response.json.return_value = [
-            {"mktCap": 3000000000000, "symbol": "AAPL"}
-        ]
+        profile_response.json.return_value = [{"mktCap": 3000000000000, "symbol": "AAPL"}]
 
         ratios_response = MagicMock()
         ratios_response.json.return_value = [
@@ -58,9 +56,7 @@ class TestFMPFundamentalsProvider:
         ]
 
         metrics_response = MagicMock()
-        metrics_response.json.return_value = [
-            {"revenuePerShareTTM": 25.5}
-        ]
+        metrics_response.json.return_value = [{"revenuePerShareTTM": 25.5}]
 
         # Set up mock to return different responses based on URL
         async def mock_get(url, **kwargs):

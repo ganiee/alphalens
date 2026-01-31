@@ -99,9 +99,7 @@ class TestNewsAPINewsProvider:
         }
         mock_http_client.get.return_value = mock_response
 
-        result = await newsapi_provider.get_news(
-            "AAPL", max_articles=5, company_name="Apple Inc."
-        )
+        result = await newsapi_provider.get_news("AAPL", max_articles=5, company_name="Apple Inc.")
 
         assert len(result) == 1
 

@@ -164,9 +164,7 @@ class RecommendationService:
 
         # Fetch news with fallback (pass company name for better search relevance)
         news_articles = await self._fetch_with_fallback(
-            primary=self.news.get_news(
-                ticker, max_articles=5, company_name=company_info.name
-            ),
+            primary=self.news.get_news(ticker, max_articles=5, company_name=company_info.name),
             fallback_provider=MockNewsProvider(),
             fallback_call=lambda p: p.get_news(
                 ticker, max_articles=5, company_name=company_info.name
@@ -232,14 +230,10 @@ class RecommendationService:
             # Don't fallback for invalid tickers - let it propagate
             raise
         except ProviderError as e:
-            logger.warning(
-                f"Provider {provider_name} failed, falling back to mock: {e}"
-            )
+            logger.warning(f"Provider {provider_name} failed, falling back to mock: {e}")
             return await fallback_call(fallback_provider)
         except Exception as e:
-            logger.warning(
-                f"Unexpected error from {provider_name}, falling back to mock: {e}"
-            )
+            logger.warning(f"Unexpected error from {provider_name}, falling back to mock: {e}")
             return await fallback_call(fallback_provider)
 
     def _get_provider_name(self, provider) -> str:
