@@ -1,0 +1,133 @@
+❯ what is build so far in F1-1?                                                                                  
+                                                                                                                 
+● F1-1: OAuth Authentication & Roles - Build Summary                                                             
+                                                                                                                 
+  Backend (FastAPI)                                                                                              
+  ┌──────────────────────────────────┬────────────────────────────────────────────────────────┐                  
+  │               File               │                        Purpose                         │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/domain/auth.py           │ User, TokenPayload, UserRole, UserPlan entities        │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/domain/settings.py       │ App settings with Cognito config                       │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/adapters/mock_auth.py    │ Mock auth for testing (no AWS needed)                  │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/adapters/cognito_auth.py │ Production JWT verification with JWKS caching          │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/routers/deps.py          │ FastAPI dependencies (get_current_user, require_admin) │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/routers/auth.py          │ Auth endpoints                                         │                  
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────┤                  
+  │ backend/tests/test_auth.py       │ 18 tests for auth functionality                        │                  
+  └──────────────────────────────────┴────────────────────────────────────────────────────────┘                  
+  API Endpoints:                                                                                                 
+  - GET /auth/me - Returns current user info (requires auth)                                                     
+  - GET /auth/admin/check - Admin-only endpoint (returns 403 for non-admin)                                      
+                                                                                                                 
+  ---                                                                                                            
+  Frontend (Next.js + Amplify)                                                                                   
+  ┌─────────────────────────────────────────┬────────────────────────────────────────────────┐                   
+  │                  File                   │                    Purpose                     │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/lib/amplify-config.ts          │ AWS Amplify/Cognito configuration              │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/lib/auth-context.tsx           │ React auth context with Hub listener           │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/app/providers.tsx              │ Amplify initialization wrapper                 │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/app/login/page.tsx             │ Plan selection (Free/Pro) + Hosted UI redirect │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/app/register/page.tsx          │ Redirects to /login                            │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/app/signout/page.tsx           │ Clears all auth state + redirects to login     │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/app/dashboard/page.tsx         │ Protected dashboard showing user info          │                   
+  ├─────────────────────────────────────────┼────────────────────────────────────────────────┤                   
+  │ frontend/components/protected-route.tsx │ HOC for authenticated routes                   │                   
+  └─────────────────────────────────────────┴────────────────────────────────────────────────┘                   
+  Routes:                                                                                                        
+  ┌────────────┬────────────────────────────────────────────────┐                                                
+  │   Route    │                    Purpose                     │                                                
+  ├────────────┼────────────────────────────────────────────────┤                                                
+  │ /login     │ Plan selection → Cognito Hosted UI             │                                                
+  ├────────────┼────────────────────────────────────────────────┤                                                
+  │ /register  │ Redirects to /login                            │                                                
+  ├────────────┼────────────────────────────────────────────────┤                                                
+  │ /signout   │ Clears session, signs out, redirects to /login │                                                
+  ├────────────┼────────────────────────────────────────────────┤                                                
+  │ /dashboard │ Protected user dashboard                       │                                                
+  └────────────┴────────────────────────────────────────────────┘                                                
+  ---                                                                                                            
+  Infrastructure (CDK)                                                                                           
+  ┌─────────────────────────────────────────┬──────────────────────────┐                                         
+  │                  File                   │         Purpose          │                                         
+  ├─────────────────────────────────────────┼──────────────────────────┤                                         
+  │ infra/app.ts                            │ Main CDK entry point     │                                         
+  ├─────────────────────────────────────────┼──────────────────────────┤                                         
+  │ infra/features/F1-1-oauth-auth/stack.ts │ Cognito stack definition │                                         
+  └─────────────────────────────────────────┴──────────────────────────┘                                         
+  AWS Resources Created:                                                                                         
+  - Cognito User Pool (alphalens-dev-users)                                                                      
+  - Cognito App Client (public, PKCE)                                                                            
+  - Cognito Hosted UI Domain (alphalens-auth)                                                                    
+  - User Groups: admin, pro                                                                                      
+  - SSM Parameters for config hydration                                                                          
+                                                                                                                 
+  Current Values (dev):                                                                                          
+  User Pool ID: us-east-2_1YyHK37iq                                                                              
+  Client ID:    32tsn6g00gvp02t6kqq67u5s9f                                                                       
+  Domain:       alphalens-auth.auth.us-east-2.amazoncognito.com                                                  
+  Region:       us-east-2                                                                                        
+                                                                                                                 
+  ---                                                                                                            
+  Configuration Files                                                                                            
+  ┌───────────────────────────┬────────────────────────────────┐                                                 
+  │           File            │            Purpose             │                                                 
+  ├───────────────────────────┼────────────────────────────────┤                                                 
+  │ config/auth.yaml          │ Auth configuration template    │                                                 
+  ├───────────────────────────┼────────────────────────────────┤                                                 
+  │ backend/.env              │ Backend environment variables  │                                                 
+  ├───────────────────────────┼────────────────────────────────┤                                                 
+  │ frontend/.env.local       │ Frontend environment variables │                                                 
+  ├───────────────────────────┼────────────────────────────────┤                                                 
+  │ Makefile                  │ Standardized commands          │                                                 
+  ├───────────────────────────┼────────────────────────────────┤                                                 
+  │ scripts/hydrate-config.sh │ Fetch config from SSM          │                                                 
+  └───────────────────────────┴────────────────────────────────┘                                                 
+  ---                                                                                                            
+  Documentation                                                                                                  
+  ┌─────────────────────────────────────────────┬─────────────────────────┐                                      
+  │                    File                     │         Purpose         │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/features/F1-1-oauth-auth/spec.md       │ Technical specification │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/features/F1-1-oauth-auth/tasks.md      │ Task tracking           │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/features/F1-1-oauth-auth/tests.md      │ Test coverage           │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/features/F1-1-oauth-auth/acceptance.md │ Acceptance criteria     │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/features/F1-1-oauth-auth/rollback.md   │ Rollback instructions   │                                      
+  ├─────────────────────────────────────────────┼─────────────────────────┤                                      
+  │ docs/infra/infra-index.md                   │ Infrastructure mapping  │                                      
+  └─────────────────────────────────────────────┴─────────────────────────┘                                      
+  ---                                                                                                            
+  Auth Flow                                                                                                      
+                                                                                                                 
+  1. User visits /login                                                                                          
+  2. Selects plan (Free or Pro)                                                                                  
+  3. Clicks "Continue" → Cognito Hosted UI                                                                       
+  4. Signs in/up via Hosted UI                                                                                   
+  5. Cognito redirects back with auth code                                                                       
+  6. Amplify exchanges code for tokens                                                                           
+  7. User lands on /dashboard                                                                                    
+  8. Sign Out → /signout → clears all state → /login                                                             
+                                                                                                                 
+  ---                                                                                                            
+  Commands                                                                                                       
+                                                                                                                 
+  make dev                              # Start everything fresh                                                 
+  make stop                             # Stop all services                                                      
+  make infra-deploy ENV=dev FEATURE=F1-1  # Deploy Cognito                                                       
+  make infra-destroy ENV=dev FEATURE=F1-1 # Destroy Cognito                                                      
+  make hydrate-config ENV=dev           # Fetch config from SSM         

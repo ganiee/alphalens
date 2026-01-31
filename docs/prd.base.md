@@ -33,7 +33,8 @@ Backend
     • Stateless API layer
 Authentication
     • Amazon Cognito (User Pools)
-    • OAuth: Google, Facebook
+    • OAuth: Google
+    • Email/password registration
     • Roles: user, admin
 
 5. Core Platform Capabilities (Always-On)
@@ -325,5 +326,189 @@ A feature may be marked Done only when:
 18.5 Test Data & Fixtures
     • Use fixed, versioned fixtures for prices/news responses.
     • Freeze time for indicator calculations where relevant.
-    • No flaky tests (no reliance on “current market time” or live endpoints).
+    • No flaky tests (no reliance on "current market time" or live endpoints).
+
+19. UI Architecture & Contracts (Invariant)
+
+- UI is defined using **screen-level contracts**, not pixel specifications.
+- Each user-facing route MUST define:
+  - Purpose
+  - Required UI states (loading, error, empty, success)
+  - Allowed user actions
+  - Routing rules
+  - Data contract (inputs / outputs)
+  - Explicit constraints (what the screen must NOT do)
+
+- Visual layout, styling, and component composition are implementation details
+  and MAY vary, but contracts MUST be honored.
+
+- Phase PRDs define which screens exist.
+- Feature PRDs define the contract for each screen they touch.
+
+20. Infrastructure as Code Governance (MANDATORY)
+
+20.1 IaC Tooling (Strict)
+    • All AWS infrastructure MUST be provisioned using AWS CDK.
+    • Manual AWS Console changes are prohibited except for emergency debugging.
+    • Any emergency manual change MUST be captured back into CDK within 48 hours.
+
+20.2 Infra Folder Contract (Feature-Scoped)
+    • All infrastructure code MUST live under /infra.
+    • Infra is organized as:
+        ○ /infra/shared/ → shared platform infra (VPC, base IAM, logging)
+        ○ /infra/features/<FeatureID>-<short-name>/ → feature-owned infra
+    • Each Feature ID owns its infra module exclusively.
+    • Feature infra MUST NOT modify shared infra directly.
+
+20.3 Stack Naming Convention
+    • All stacks MUST follow:
+        alphalens-<env>-<FeatureID>-<purpose>
+    • Examples:
+        ○ alphalens-dev-F1-1-cognito
+        ○ alphalens-prod-F3-2-dynamodb
+    • Environments allowed:
+        ○ dev
+        ○ stage
+        ○ prod
+
+20.4 Infra Ownership Rule
+    • Every infra stack MUST be owned by exactly one Feature ID.
+    • Infra stacks MAY NOT be modified by unrelated features without explicit documentation.
+
+20.5 Canonical Infra Mapping Index
+    • docs/infra/infra-index.md is the single source of truth mapping:
+        Feature ID → Infra module → Stack(s) → Outputs → Consumers
+    • The file MUST contain the following table columns:
+
+| Column | Description |
+|--------|-------------|
+| Feature ID | Owner feature in format F<phase>-<number> |
+| Stack Name | Full stack name following naming convention |
+| Module Path | Path to CDK module under /infra |
+| Purpose | Brief description of what the stack provisions |
+| Key Outputs | CloudFormation outputs or SSM parameters |
+| Consumed By | Features or components that use these outputs |
+| Deploy Command | make command to deploy |
+| Rollback Command | make command to destroy/rollback |
+
+    • Any feature that creates or modifies infrastructure MUST add or update an entry.
+    • Infra changes are invalid if this index is not updated.
+
+20.6 Infra Outputs & Config Hydration Contract
+    • Infra stacks MUST expose required values via:
+        ○ CloudFormation Outputs
+        ○ AWS SSM Parameter Store (preferred)
+    • Application config files (auth.yaml, .env) MUST derive values from infra outputs.
+    • Manual copy/paste of infra identifiers is discouraged long-term.
+    • Config hydration from SSM via scripts is the recommended pattern.
+    • Example SSM output paths:
+        /alphalens/<env>/auth/userPoolId
+        /alphalens/<env>/auth/clientId
+        /alphalens/<env>/auth/issuer
+        /alphalens/<env>/auth/domain
+
+20.7 Infra-to-Feature Governance (Hard Gating)
+    • Any feature introducing or modifying infra MUST:
+        ○ Declare its infra module path
+        ○ Add/update its entry in docs/infra/infra-index.md
+        ○ Reference infra in spec.md and rollback.md
+    • A feature may NOT be marked Complete unless infra mapping is present.
+    • Optionally, an Infra column MAY be added to docs/feature-index.md.
+
+20.8 Infrastructure CI Enforcement (MANDATORY)
+CI Validation Rules
+    • CI MUST fail if:
+        ○ Infra code under /infra/features/<FeatureID>/ is modified
+        ○ AND docs/infra/infra-index.md is not updated
+    • CI MUST fail if:
+        ○ A feature is marked Complete
+        ○ AND required infra documentation is missing
+
+CI Responsibilities
+    • CI MUST verify:
+        ○ Stack naming follows convention
+        ○ Infra module path matches Feature ID
+        ○ Feature docs reference infra where applicable
+
+CI Is Authoritative
+    • CI failures BLOCK merge
+    • CI enforcement applies equally to humans and AI agents
+
+20.9 Deterministic Infra Execution Interface
+    • Standardized infra commands:
+        make infra-synth ENV=<env> FEATURE=<FeatureID>
+        make infra-diff ENV=<env> FEATURE=<FeatureID>
+        make infra-deploy ENV=<env> FEATURE=<FeatureID>
+        make infra-destroy ENV=<env> FEATURE=<FeatureID>
+    • Infra MUST be deployable using these commands.
+    • Claude MUST NOT invent custom deployment steps.
+
+20.10 Non-Normative Example: F1-1 Cognito (Reference Only)
+    Feature F1-1 (OAuth Authentication & Roles) owns:
+        • Cognito User Pool
+        • Public App Client (PKCE)
+        • Hosted UI Domain
+        • OAuth Providers (Google optional)
+
+    Example stack: alphalens-dev-F1-1-cognito
+
+    Outputs consumed by frontend login flow and backend JWT verification.
+
+    This example is illustrative and non-normative.
+
+21. Pull Request & CI Governance (MANDATORY)
+
+21.1 Feature Branch & PR Workflow
+    • Every feature MUST be developed on a dedicated branch.
+    • Branch naming convention: F<phase>-<n>-<short-name>
+        ○ Example: F1-1-Oauth, F1-2-recommendation-engine
+    • Upon feature completion, a Pull Request MUST be created to merge into main.
+    • Direct commits to main are prohibited.
+
+21.2 Pull Request Requirements
+    • PR title format: F<phase>-<n>: <Feature Title>
+        ○ Example: F1-1: OAuth Authentication & Roles
+    • PR body MUST include:
+        ○ Summary: Brief description of changes (bullet points)
+        ○ Test Plan: How to verify the changes
+        ○ Acceptance Checklist: Key acceptance criteria verified
+    • PR template (.github/pull_request_template.md) MUST be used.
+
+21.3 CI Pipeline Requirements (MANDATORY)
+    • CI pipeline MUST run on:
+        ○ Every PR targeting main
+        ○ Every push to main
+    • CI pipeline MUST include:
+        ○ Backend: Install dependencies, run pytest, run ruff lint
+        ○ Frontend: Install dependencies, run eslint, run build
+        ○ Infra validation (if /infra modified): Verify infra-index.md updated
+    • CI configuration lives in .github/workflows/ci.yml
+
+21.4 CI Pass Required for Merge (Non-Negotiable)
+    • All CI jobs MUST pass (green) before PR can be merged.
+    • Branch protection on main MUST require:
+        ○ CI status checks to pass
+        ○ At least one approval (if team > 1)
+    • Failed CI BLOCKS merge - no exceptions.
+
+21.5 Feature Completion Gating
+    • A feature may only be marked Complete when:
+        ○ PR is created
+        ○ CI passes
+        ○ PR is merged to main
+    • Feature index status update to Complete MUST happen after merge.
+
+21.6 Standardized PR Commands
+    • Create PR: make pr FEATURE=<FeatureID>
+    • Run CI locally: make ci
+    • Commands are defined in Makefile.
+
+21.7 CI Enforcement Scope
+    CI MUST verify:
+        • Backend tests pass (pytest)
+        • Backend lint passes (ruff)
+        • Frontend lint passes (eslint)
+        • Frontend builds successfully (next build)
+        • Infra index updated (if infra changed)
+        • Feature docs exist (if feature marked Complete)
 
