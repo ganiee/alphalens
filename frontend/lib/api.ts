@@ -45,6 +45,15 @@ export interface SentimentData {
   neutral_count: number;
 }
 
+export interface CompanyInfo {
+  name: string;
+  sector: string | null;
+  industry: string | null;
+  exchange: string | null;
+  description: string | null;
+  website: string | null;
+}
+
 export interface NewsArticleSummary {
   title: string;
   source: string;
@@ -64,6 +73,7 @@ export interface ProviderAttribution {
 
 export interface EvidencePacket {
   ticker: string;
+  company_info: CompanyInfo;
   technical: TechnicalIndicators;
   fundamental: FundamentalMetrics;
   sentiment: SentimentData;

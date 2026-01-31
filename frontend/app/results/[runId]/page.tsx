@@ -11,6 +11,7 @@ import {
   RecommendationResult,
   StockScore,
   EvidencePacket,
+  CompanyInfo,
   NewsArticleSummary,
   TechnicalIndicators,
   FundamentalMetrics,
@@ -208,15 +209,36 @@ function ScoreCard({ score, evidence, isExpanded, onToggleEvidence }: ScoreCardP
     return "bg-red-100";
   };
 
+  const companyInfo = evidence?.company_info;
+
   return (
     <div className="rounded-lg bg-white p-6 shadow">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div>
-          <span className="text-2xl font-bold text-gray-900">{score.ticker}</span>
-          <span className="ml-2 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-            Rank #{score.rank}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-gray-900">{score.ticker}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+              Rank #{score.rank}
+            </span>
+          </div>
+          {companyInfo && (
+            <p className="mt-1 text-sm text-gray-600 truncate" title={companyInfo.name}>
+              {companyInfo.name}
+            </p>
+          )}
+          {companyInfo?.sector && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
+                {companyInfo.sector}
+              </span>
+              {companyInfo.industry && (
+                <span className="rounded bg-gray-50 px-1.5 py-0.5 text-xs text-gray-600">
+                  {companyInfo.industry}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div
           className={`rounded-full px-4 py-2 text-2xl font-bold ${getScoreBg(score.composite_score)} ${getScoreColor(score.composite_score)}`}

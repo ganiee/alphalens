@@ -94,6 +94,17 @@ class StockScore(BaseModel):
     allocation_pct: float = Field(ge=0, le=100, description="Recommended allocation percentage")
 
 
+class CompanyInfo(BaseModel):
+    """Company information for a ticker."""
+
+    name: str = "Unknown"
+    sector: str | None = None
+    industry: str | None = None
+    exchange: str | None = None
+    description: str | None = None
+    website: str | None = None
+
+
 class NewsArticleSummary(BaseModel):
     """Summary of a news article for UI display."""
 
@@ -119,6 +130,7 @@ class EvidencePacket(BaseModel):
     """Raw evidence data used for scoring (stored per run)."""
 
     ticker: str
+    company_info: CompanyInfo = Field(default_factory=CompanyInfo)
     technical: TechnicalIndicators
     fundamental: FundamentalMetrics
     sentiment: SentimentData

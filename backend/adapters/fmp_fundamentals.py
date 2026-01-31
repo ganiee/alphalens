@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from adapters.cache import CacheEntry, ProviderCache, make_cache_key
 from adapters.http_client import RetryingHttpClient
 from domain.providers import ProviderError
-from domain.recommendation import FundamentalMetrics
+from domain.recommendation import CompanyInfo, FundamentalMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,80 @@ class FMPFundamentalsProvider:
         except Exception as e:
             logger.error(f"FMP API error for {ticker}: {e}")
             raise ProviderError(PROVIDER_NAME, ticker, str(e))
+
+    async def get_company_info(self, ticker: str) -> CompanyInfo:
+        """Fetch company information from FMP.
+
+        Args:
+            ticker: Stock ticker symbol
+
+        Returns:
+            CompanyInfo with name, sector, industry, etc.
+        """
+        # Check cache first
+        cache_key = make_cache_key(PROVIDER_NAME, "company_info", ticker)
+        cached = self.cache.get(cache_key)
+        if cached:
+            logger.debug(f"Cache hit for {cache_key}")
+            return self._deserialize_company_info(cached.data)
+
+        try:
+            profile_data = await self._fetch_endpoint(f"/profile/{ticker}")
+            profile = profile_data[0] if profile_data else {}
+
+            company_info = CompanyInfo(
+                name=profile.get("companyName", ticker),
+                sector=profile.get("sector"),
+                industry=profile.get("industry"),
+                exchange=profile.get("exchangeShortName"),
+                description=profile.get("description"),
+                website=profile.get("website"),
+            )
+
+            # Cache the result
+            now = datetime.now(timezone.utc)
+            self.cache.set(
+                CacheEntry(
+                    cache_key=cache_key,
+                    provider=PROVIDER_NAME,
+                    data=self._serialize_company_info(company_info),
+                    ticker=ticker,
+                    fetched_at=now,
+                    expires_at=now + timedelta(seconds=self.cache_ttl_seconds),
+                )
+            )
+
+            logger.info(f"Fetched company info for {ticker} from FMP")
+            return company_info
+
+        except ProviderError:
+            raise
+        except Exception as e:
+            logger.error(f"FMP API error for {ticker} company info: {e}")
+            # Return default company info on error
+            return CompanyInfo(name=ticker)
+
+    def _serialize_company_info(self, ci: CompanyInfo) -> dict:
+        """Serialize CompanyInfo for caching."""
+        return {
+            "name": ci.name,
+            "sector": ci.sector,
+            "industry": ci.industry,
+            "exchange": ci.exchange,
+            "description": ci.description,
+            "website": ci.website,
+        }
+
+    def _deserialize_company_info(self, data: dict) -> CompanyInfo:
+        """Deserialize CompanyInfo from cache."""
+        return CompanyInfo(
+            name=data.get("name", "Unknown"),
+            sector=data.get("sector"),
+            industry=data.get("industry"),
+            exchange=data.get("exchange"),
+            description=data.get("description"),
+            website=data.get("website"),
+        )
 
     async def _fetch_endpoint(self, endpoint: str) -> list:
         """Fetch data from an FMP API endpoint.

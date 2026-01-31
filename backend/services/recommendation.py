@@ -20,6 +20,7 @@ from domain.providers import (
     SentimentAnalyzer,
 )
 from domain.recommendation import (
+    CompanyInfo,
     EvidencePacket,
     NewsArticleSummary,
     ProviderAttribution,
@@ -154,6 +155,13 @@ class RecommendationService:
         attribution.fundamentals_provider = self._get_provider_name(self.fundamentals)
         attribution.fundamentals_fetched_at = now
 
+        # Fetch company info (uses same provider as fundamentals)
+        try:
+            company_info = await self.fundamentals.get_company_info(ticker)
+        except Exception as e:
+            logger.warning(f"Failed to fetch company info for {ticker}: {e}")
+            company_info = CompanyInfo(name=ticker)
+
         # Fetch news with fallback
         news_articles = await self._fetch_with_fallback(
             primary=self.news.get_news(ticker, max_articles=5),
@@ -184,6 +192,7 @@ class RecommendationService:
 
         return EvidencePacket(
             ticker=ticker,
+            company_info=company_info,
             technical=technical,
             fundamental=fundamentals,
             sentiment=sentiment,
