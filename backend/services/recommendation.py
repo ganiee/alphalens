@@ -162,11 +162,15 @@ class RecommendationService:
             logger.warning(f"Failed to fetch company info for {ticker}: {e}")
             company_info = CompanyInfo(name=ticker)
 
-        # Fetch news with fallback
+        # Fetch news with fallback (pass company name for better search relevance)
         news_articles = await self._fetch_with_fallback(
-            primary=self.news.get_news(ticker, max_articles=5),
+            primary=self.news.get_news(
+                ticker, max_articles=5, company_name=company_info.name
+            ),
             fallback_provider=MockNewsProvider(),
-            fallback_call=lambda p: p.get_news(ticker, max_articles=5),
+            fallback_call=lambda p: p.get_news(
+                ticker, max_articles=5, company_name=company_info.name
+            ),
             provider_name=self._get_provider_name(self.news),
         )
         attribution.news_provider = self._get_provider_name(self.news)

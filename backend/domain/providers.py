@@ -123,12 +123,15 @@ class NewsArticle:
 class NewsProvider(Protocol):
     """Protocol for fetching news articles."""
 
-    async def get_news(self, ticker: str, max_articles: int = 20) -> list[NewsArticle]:
+    async def get_news(
+        self, ticker: str, max_articles: int = 20, company_name: str | None = None
+    ) -> list[NewsArticle]:
         """Fetch recent news articles for a ticker.
 
         Args:
             ticker: Stock ticker symbol
             max_articles: Maximum number of articles to return
+            company_name: Optional company name for better search relevance
 
         Returns:
             List of NewsArticle objects

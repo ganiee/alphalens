@@ -81,12 +81,15 @@ TICKER_SENTIMENT_BIAS = {
 class MockNewsProvider:
     """Mock implementation of NewsProvider for testing."""
 
-    async def get_news(self, ticker: str, max_articles: int = 20) -> list[NewsArticle]:
+    async def get_news(
+        self, ticker: str, max_articles: int = 20, company_name: str | None = None
+    ) -> list[NewsArticle]:
         """Return mock news articles for a ticker.
 
         Args:
             ticker: Stock ticker symbol
             max_articles: Maximum number of articles to return
+            company_name: Optional company name (unused in mock, for API compatibility)
 
         Returns:
             List of mock NewsArticle objects

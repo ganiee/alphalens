@@ -72,14 +72,61 @@ class TestNewsAPINewsProvider:
         assert result[0].source == "Reuters"
         assert result[0].url == "https://reuters.com/article1"
 
-        # Verify HTTP call
+        # Verify HTTP call - uses ticker + "stock" when no company_name provided
         mock_http_client.get.assert_called_once()
         call_args = mock_http_client.get.call_args
         assert call_args[1]["headers"]["X-Api-Key"] == "test-api-key"
-        assert call_args[1]["params"]["q"] == "AAPL"
+        assert call_args[1]["params"]["q"] == "AAPL stock"
 
         # Verify cache was updated
         mock_cache.set.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_search_with_company_name(self, newsapi_provider, mock_http_client, mock_cache):
+        """Test that search query uses company name when provided."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "status": "ok",
+            "articles": [
+                {
+                    "title": "Apple Inc reports strong quarterly earnings",
+                    "source": {"name": "Reuters"},
+                    "publishedAt": "2024-01-15T10:30:00Z",
+                    "url": "https://reuters.com/article1",
+                    "description": "Apple reported record growth.",
+                },
+            ],
+        }
+        mock_http_client.get.return_value = mock_response
+
+        result = await newsapi_provider.get_news(
+            "AAPL", max_articles=5, company_name="Apple Inc."
+        )
+
+        assert len(result) == 1
+
+        # Verify query uses cleaned company name with stock context
+        call_args = mock_http_client.get.call_args
+        query = call_args[1]["params"]["q"]
+        assert '"Apple" AND (stock OR shares OR market)' == query
+
+    @pytest.mark.asyncio
+    async def test_search_company_name_same_as_ticker(
+        self, newsapi_provider, mock_http_client, mock_cache
+    ):
+        """Test fallback to ticker query when company_name equals ticker."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "status": "ok",
+            "articles": [],
+        }
+        mock_http_client.get.return_value = mock_response
+
+        await newsapi_provider.get_news("AAPL", max_articles=5, company_name="AAPL")
+
+        # Should fall back to ticker-based query
+        call_args = mock_http_client.get.call_args
+        assert call_args[1]["params"]["q"] == "AAPL stock"
 
     @pytest.mark.asyncio
     async def test_sentiment_label_positive(self, newsapi_provider, mock_http_client, mock_cache):

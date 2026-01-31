@@ -89,13 +89,14 @@ class NewsAPINewsProvider:
         self.page_size = page_size
 
     async def get_news(
-        self, ticker: str, max_articles: int = 20
+        self, ticker: str, max_articles: int = 20, company_name: str | None = None
     ) -> list[NewsArticle]:
         """Fetch recent news articles from NewsAPI.
 
         Args:
             ticker: Stock ticker symbol
             max_articles: Maximum number of articles to return
+            company_name: Optional company name for better search relevance
 
         Returns:
             List of NewsArticle objects with sentiment labels
@@ -103,6 +104,16 @@ class NewsAPINewsProvider:
         Raises:
             ProviderError: If news cannot be fetched
         """
+        # Build search query - use company name if available for better relevance
+        if company_name and company_name != ticker:
+            # Remove common suffixes for cleaner search
+            clean_name = company_name.replace(" Inc.", "").replace(" Corp.", "").replace(" Corporation", "").replace(", Inc.", "").replace(" Ltd.", "").strip()
+            # Search for company name with stock/shares context
+            search_query = f'"{clean_name}" AND (stock OR shares OR market)'
+        else:
+            # Fallback to ticker for short/common tickers
+            search_query = f"{ticker} stock"
+
         # Check cache first
         cache_key = make_cache_key(
             PROVIDER_NAME, "news", ticker, max_articles=max_articles
@@ -115,12 +126,11 @@ class NewsAPINewsProvider:
         try:
             url = f"{self.base_url}/everything"
 
-            # Search for articles mentioning the ticker
-            # Use ticker as search query
+            logger.debug(f"NewsAPI search query for {ticker}: {search_query}")
             response = await self.http_client.get(
                 url,
                 params={
-                    "q": ticker,
+                    "q": search_query,
                     "sortBy": "publishedAt",
                     "pageSize": min(self.page_size, max_articles),
                     "language": "en",
