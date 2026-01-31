@@ -89,30 +89,30 @@ hydrate-config:
 	@echo "Hydrating config from SSM for ENV=$(ENV)"
 	@./scripts/hydrate-config.sh $(ENV)
 
-# Stop all running services
+# Stop all running services (thorough cleanup for WSL)
 stop:
-	@-pkill -x "uvicorn" 2>/dev/null
-	@-pkill -x "node" -f "next-server" 2>/dev/null
-	@-lsof -ti:8000 | xargs kill 2>/dev/null || true
-	@-lsof -ti:3000 | xargs kill 2>/dev/null || true
+	@echo "Stopping AlphaLens services..."
+	@-pkill -f "uvicorn main:app" 2>/dev/null || true
+	@-pkill -f "next dev" 2>/dev/null || true
+	@-pkill -f "next-server" 2>/dev/null || true
+	@sleep 1
+	@-lsof -ti:8000 | xargs -r kill -9 2>/dev/null || true
+	@-lsof -ti:3000,3001,3002,3003 | xargs -r kill -9 2>/dev/null || true
 	@sleep 1
 	@echo "All services stopped"
 
 # Development servers
 backend-dev:
-	cd backend && uvicorn main:app --reload
+	cd backend && AUTH_MODE=mock uvicorn main:app --reload
 
 frontend-dev:
 	cd frontend && npm run dev
 
 # Start everything fresh (stops existing, then starts both)
-dev:
-	@echo "Stopping existing services..."
-	@-lsof -ti:8000 | xargs kill 2>/dev/null || true
-	@-lsof -ti:3000 | xargs kill 2>/dev/null || true
-	@sleep 2
-	@echo "Starting backend..."
-	@cd backend && nohup uvicorn main:app --reload > /tmp/alphalens-backend.log 2>&1 &
+dev: stop
+	@sleep 1
+	@echo "Starting backend (AUTH_MODE=mock)..."
+	@cd backend && AUTH_MODE=mock nohup uvicorn main:app --reload > /tmp/alphalens-backend.log 2>&1 &
 	@sleep 3
 	@echo "Starting frontend..."
 	@cd frontend && nohup npm run dev > /tmp/alphalens-frontend.log 2>&1 &

@@ -17,8 +17,13 @@ class Settings(BaseSettings):
     # Auth mode: "cognito" for production, "mock" for testing
     auth_mode: str = "cognito"
 
-    # CORS settings
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # CORS settings - include multiple ports for local dev
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:3003",
+    ]
 
     model_config = {
         "env_file": ".env",

@@ -3,18 +3,20 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, isMockAuth } from "@/lib/auth-context";
 
 type Plan = "free" | "pro" | null;
 
 function LoginContent() {
-  const { signInWithHostedUI, isAuthenticated, isLoading } = useAuth();
+  const { signInWithHostedUI, isAuthenticated, isLoading, mockLogin } =
+    useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [selectedPlan, setSelectedPlan] = useState<Plan>(null);
   const [error, setError] = useState("");
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [mockEmail, setMockEmail] = useState("test@example.com");
 
   // Check for error from callback
   useEffect(() => {
@@ -39,7 +41,14 @@ function LoginContent() {
     setIsRedirecting(true);
 
     try {
-      // Store selected plan in sessionStorage for after callback
+      // Mock auth mode - login directly
+      if (isMockAuth && mockLogin) {
+        mockLogin(mockEmail, selectedPlan);
+        router.replace("/dashboard");
+        return;
+      }
+
+      // Real Cognito auth - store plan and redirect
       sessionStorage.setItem("selectedPlan", selectedPlan);
       await signInWithHostedUI();
     } catch (err) {
@@ -65,12 +74,37 @@ function LoginContent() {
           <p className="mt-2 text-gray-600">
             AI-powered stock analysis and insights
           </p>
+          {isMockAuth && (
+            <p className="mt-2 rounded bg-yellow-100 px-2 py-1 text-sm text-yellow-800">
+              Mock Auth Mode (local testing)
+            </p>
+          )}
         </div>
 
         {/* Error message */}
         {error && (
           <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {/* Mock Auth Email Input */}
+        {isMockAuth && (
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Test Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={mockEmail}
+              onChange={(e) => setMockEmail(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="test@example.com"
+            />
           </div>
         )}
 
@@ -176,7 +210,7 @@ function LoginContent() {
           {isRedirecting ? (
             <span className="flex items-center justify-center">
               <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Redirecting...
+              {isMockAuth ? "Signing in..." : "Redirecting..."}
             </span>
           ) : (
             "Continue"

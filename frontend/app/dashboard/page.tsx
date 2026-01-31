@@ -176,12 +176,12 @@ function DashboardContent() {
               </div>
               {userInfo?.plan === "free" && (
                 <p className="mt-2 text-xs text-gray-500">
-                  5 analyses per month, basic indicators
+                  3 runs/month, 3 stocks per run, 1M horizon only
                 </p>
               )}
               {userInfo?.plan === "pro" && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Unlimited analyses, advanced indicators
+                  20 runs/month, 5 stocks per run, all horizons
                 </p>
               )}
             </div>
@@ -194,16 +194,16 @@ function DashboardContent() {
             </h3>
             <div className="space-y-3">
               <button
-                disabled
-                className="w-full rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-400"
+                onClick={() => router.push("/analyze")}
+                className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
               >
-                Run Analysis (Coming Soon)
+                Run Analysis
               </button>
               <button
-                disabled
-                className="w-full rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-400"
+                onClick={() => router.push("/history")}
+                className="w-full rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200"
               >
-                View History (Coming Soon)
+                View History
               </button>
             </div>
           </div>

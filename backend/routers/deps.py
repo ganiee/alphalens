@@ -7,8 +7,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from adapters.cognito_auth import CognitoAuthVerifier
 from adapters.mock_auth import MockAuthVerifier
+from adapters.mock_fundamentals import MockFundamentalsProvider
+from adapters.mock_market_data import MockMarketDataProvider
+from adapters.mock_news import MockNewsProvider
+from adapters.mock_sentiment import MockSentimentAnalyzer
 from domain.auth import AuthenticationError, AuthVerifier, TokenPayload, User
 from domain.settings import Settings, get_settings
+from repo.recommendations import RecommendationRepository, get_recommendation_repository
+from services.recommendation import RecommendationService
 
 # Security scheme for OpenAPI docs
 security = HTTPBearer(auto_error=False)
@@ -100,3 +106,24 @@ async def require_admin(
 # Type aliases for cleaner route signatures
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+
+
+def get_recommendation_service() -> RecommendationService:
+    """Get the recommendation service with all dependencies.
+
+    Returns:
+        Configured RecommendationService instance
+    """
+    return RecommendationService(
+        market_data=MockMarketDataProvider(),
+        fundamentals=MockFundamentalsProvider(),
+        news=MockNewsProvider(),
+        sentiment=MockSentimentAnalyzer(),
+    )
+
+
+# Type alias for recommendation dependencies
+RecommendationServiceDep = Annotated[RecommendationService, Depends(get_recommendation_service)]
+RecommendationRepoDep = Annotated[
+    RecommendationRepository, Depends(get_recommendation_repository)
+]

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from domain.settings import get_settings
-from routers import auth, health
+from routers import auth, health, recommendations
 
 # Set auth mode from environment, default to mock for testing
 os.environ.setdefault("AUTH_MODE", "mock")
@@ -28,3 +28,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(recommendations.router)
