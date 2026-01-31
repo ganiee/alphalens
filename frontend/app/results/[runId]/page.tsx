@@ -227,14 +227,21 @@ function ScoreCard({ score, evidence, isExpanded, onToggleEvidence }: ScoreCardP
               {companyInfo.name}
             </p>
           )}
-          {companyInfo?.sector && (
+          {(companyInfo?.sector || companyInfo?.industry || companyInfo?.exchange) && (
             <div className="mt-1 flex flex-wrap gap-1">
-              <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
-                {companyInfo.sector}
-              </span>
+              {companyInfo.sector && (
+                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
+                  {companyInfo.sector}
+                </span>
+              )}
               {companyInfo.industry && (
-                <span className="rounded bg-gray-50 px-1.5 py-0.5 text-xs text-gray-600">
+                <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-700">
                   {companyInfo.industry}
+                </span>
+              )}
+              {companyInfo.exchange && (
+                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                  {companyInfo.exchange}
                 </span>
               )}
             </div>
