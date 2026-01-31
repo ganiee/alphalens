@@ -456,3 +456,59 @@ CI Is Authoritative
 
     This example is illustrative and non-normative.
 
+21. Pull Request & CI Governance (MANDATORY)
+
+21.1 Feature Branch & PR Workflow
+    • Every feature MUST be developed on a dedicated branch.
+    • Branch naming convention: F<phase>-<n>-<short-name>
+        ○ Example: F1-1-Oauth, F1-2-recommendation-engine
+    • Upon feature completion, a Pull Request MUST be created to merge into main.
+    • Direct commits to main are prohibited.
+
+21.2 Pull Request Requirements
+    • PR title format: F<phase>-<n>: <Feature Title>
+        ○ Example: F1-1: OAuth Authentication & Roles
+    • PR body MUST include:
+        ○ Summary: Brief description of changes (bullet points)
+        ○ Test Plan: How to verify the changes
+        ○ Acceptance Checklist: Key acceptance criteria verified
+    • PR template (.github/pull_request_template.md) MUST be used.
+
+21.3 CI Pipeline Requirements (MANDATORY)
+    • CI pipeline MUST run on:
+        ○ Every PR targeting main
+        ○ Every push to main
+    • CI pipeline MUST include:
+        ○ Backend: Install dependencies, run pytest, run ruff lint
+        ○ Frontend: Install dependencies, run eslint, run build
+        ○ Infra validation (if /infra modified): Verify infra-index.md updated
+    • CI configuration lives in .github/workflows/ci.yml
+
+21.4 CI Pass Required for Merge (Non-Negotiable)
+    • All CI jobs MUST pass (green) before PR can be merged.
+    • Branch protection on main MUST require:
+        ○ CI status checks to pass
+        ○ At least one approval (if team > 1)
+    • Failed CI BLOCKS merge - no exceptions.
+
+21.5 Feature Completion Gating
+    • A feature may only be marked Complete when:
+        ○ PR is created
+        ○ CI passes
+        ○ PR is merged to main
+    • Feature index status update to Complete MUST happen after merge.
+
+21.6 Standardized PR Commands
+    • Create PR: make pr FEATURE=<FeatureID>
+    • Run CI locally: make ci
+    • Commands are defined in Makefile.
+
+21.7 CI Enforcement Scope
+    CI MUST verify:
+        • Backend tests pass (pytest)
+        • Backend lint passes (ruff)
+        • Frontend lint passes (eslint)
+        • Frontend builds successfully (next build)
+        • Infra index updated (if infra changed)
+        • Feature docs exist (if feature marked Complete)
+
