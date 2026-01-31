@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     provider_cache_backend: str = "sqlite"
     provider_cache_dir: str = ".cache/alphalens"
     provider_cache_db_path: str = ".cache/alphalens/cache.sqlite"
-    market_cache_ttl_seconds: int = 60
+    market_cache_ttl_seconds: int = 900  # 15 minutes - helps avoid rate limits
     fundamentals_cache_ttl_seconds: int = 86400
     news_cache_ttl_seconds: int = 300
 
