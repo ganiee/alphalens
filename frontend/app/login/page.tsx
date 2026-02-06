@@ -37,25 +37,51 @@ function LoginContent() {
   const handleContinue = async () => {
     if (!selectedPlan) return;
 
+    console.log("handleContinue: Starting...");
     setError("");
     setIsRedirecting(true);
 
     try {
       // Mock auth mode - login directly
       if (isMockAuth && mockLogin) {
+        console.log("handleContinue: Using mock login");
         mockLogin(mockEmail, selectedPlan);
         router.replace("/dashboard");
         return;
       }
 
       // Real Cognito auth - store plan and redirect
+      console.log("handleContinue: Storing plan and calling signInWithHostedUI");
       sessionStorage.setItem("selectedPlan", selectedPlan);
-      await signInWithHostedUI();
+
+      try {
+        await signInWithHostedUI();
+        console.log("handleContinue: signInWithHostedUI returned (unexpected - should have redirected)");
+      } catch (innerErr) {
+        console.error("handleContinue: signInWithHostedUI error:", innerErr);
+        throw innerErr;
+      }
     } catch (err) {
+      console.error("handleContinue: Outer error:", err);
+      // If already signed in, just redirect to dashboard
+      if (err instanceof Error && err.message === "ALREADY_SIGNED_IN") {
+        console.log("handleContinue: Already signed in, redirecting to dashboard");
+        router.replace("/dashboard");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Sign in failed");
       setIsRedirecting(false);
     }
   };
+
+  // Debug logging
+  console.log("Login page state:", {
+    isLoading,
+    isAuthenticated,
+    isMockAuth,
+    selectedPlan,
+    isRedirecting,
+  });
 
   if (isLoading) {
     return (
@@ -213,13 +239,19 @@ function LoginContent() {
               {isMockAuth ? "Signing in..." : "Redirecting..."}
             </span>
           ) : (
-            "Continue"
+            "Continue to Sign In / Sign Up"
           )}
         </button>
 
         {!selectedPlan && (
           <p className="text-center text-sm text-gray-500">
             Please select a plan to continue
+          </p>
+        )}
+
+        {!isMockAuth && selectedPlan && (
+          <p className="text-center text-sm text-gray-500">
+            New user? You can create an account on the next screen.
           </p>
         )}
 

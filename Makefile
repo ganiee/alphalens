@@ -1,7 +1,7 @@
 # AlphaLens Makefile
 # Standardized commands for infrastructure and development
 
-.PHONY: help dev stop backend-dev frontend-dev \
+.PHONY: help dev dev-real-auth stop backend-dev frontend-dev \
         backend-install backend-test backend-lint backend-format \
         frontend-install frontend-build frontend-lint \
         test lint ci pr \
@@ -15,7 +15,8 @@ help:
 	@echo ""
 	@echo "QUICK START"
 	@echo "───────────────────────────────────────────────────────────────────"
-	@echo "  make dev              Start backend + frontend (fresh)"
+	@echo "  make dev              Start with mock auth (local testing)"
+	@echo "  make dev-real-auth    Start with real Cognito auth"
 	@echo "  make stop             Stop all services"
 	@echo ""
 	@echo "DEVELOPMENT"
@@ -108,21 +109,77 @@ backend-dev:
 frontend-dev:
 	cd frontend && npm run dev
 
-# Start everything fresh (stops existing, then starts both)
+# Start everything fresh with MOCK auth (stops existing, then starts both)
 dev: stop
+	@if grep -q "^NEXT_PUBLIC_AUTH_MODE=cognito" frontend/.env.local 2>/dev/null; then \
+		sed -i 's/^NEXT_PUBLIC_AUTH_MODE=cognito/NEXT_PUBLIC_AUTH_MODE=mock/' frontend/.env.local; \
+		echo "Switched frontend to mock auth mode"; \
+	fi
 	@sleep 1
 	@echo "Starting backend (AUTH_MODE=mock)..."
 	@cd backend && AUTH_MODE=mock nohup uvicorn main:app --reload > /tmp/alphalens-backend.log 2>&1 &
 	@sleep 3
-	@echo "Starting frontend..."
-	@cd frontend && nohup npm run dev > /tmp/alphalens-frontend.log 2>&1 &
+	@echo "Starting frontend (AUTH_MODE=mock)..."
+	@cd frontend && NEXT_PUBLIC_AUTH_MODE=mock nohup npm run dev > /tmp/alphalens-frontend.log 2>&1 &
 	@sleep 5
 	@echo ""
 	@echo "========================================="
-	@echo "AlphaLens is running!"
+	@echo "AlphaLens is running (MOCK AUTH)"
 	@echo "========================================="
 	@echo "Frontend: http://localhost:3000/login"
 	@echo "Backend:  http://localhost:8000"
+	@echo ""
+	@echo "Mode: Mock authentication (no Cognito required)"
+	@echo ""
+	@echo "Logs:"
+	@echo "  Backend:  tail -f /tmp/alphalens-backend.log"
+	@echo "  Frontend: tail -f /tmp/alphalens-frontend.log"
+	@echo ""
+	@echo "Stop with: make stop"
+	@echo "========================================="
+
+# Start everything with REAL Cognito auth (requires Cognito config)
+dev-real-auth: stop
+	@echo ""
+	@echo "========================================="
+	@echo "Starting with REAL Cognito Authentication"
+	@echo "========================================="
+	@echo ""
+	@echo "Checking configuration..."
+	@if grep -q "^NEXT_PUBLIC_AUTH_MODE=mock" frontend/.env.local 2>/dev/null; then \
+		echo ""; \
+		echo "NOTE: Updating frontend/.env.local to use real auth..."; \
+		sed -i 's/^NEXT_PUBLIC_AUTH_MODE=mock/NEXT_PUBLIC_AUTH_MODE=cognito/' frontend/.env.local; \
+		echo "  Changed NEXT_PUBLIC_AUTH_MODE from 'mock' to 'cognito'"; \
+		echo "  (Run 'make dev' to switch back to mock mode)"; \
+		echo ""; \
+	fi
+	@sleep 1
+	@echo "Starting backend (AUTH_MODE=cognito)..."
+	@cd backend && AUTH_MODE=cognito nohup uvicorn main:app --reload > /tmp/alphalens-backend.log 2>&1 &
+	@sleep 3
+	@echo "Starting frontend (real Cognito)..."
+	@cd frontend && NEXT_PUBLIC_AUTH_MODE=cognito nohup npm run dev > /tmp/alphalens-frontend.log 2>&1 &
+	@sleep 5
+	@echo ""
+	@echo "========================================="
+	@echo "AlphaLens is running (REAL AUTH)"
+	@echo "========================================="
+	@echo "Frontend: http://localhost:3000/login"
+	@echo "Backend:  http://localhost:8000"
+	@echo ""
+	@echo "Mode: Real Cognito authentication"
+	@echo ""
+	@echo "Test Flow:"
+	@echo "  1. Go to http://localhost:3000/login"
+	@echo "  2. Select a plan (Free or Pro)"
+	@echo "  3. Click 'Continue to Sign In / Sign Up'"
+	@echo "  4. On Cognito Hosted UI:"
+	@echo "     - New user: Click 'Sign up' to register"
+	@echo "     - Existing user: Enter credentials to sign in"
+	@echo "  5. After auth, you'll land on the dashboard"
+	@echo "  6. Run analysis, check history"
+	@echo "  7. Sign out and login as another user"
 	@echo ""
 	@echo "Logs:"
 	@echo "  Backend:  tail -f /tmp/alphalens-backend.log"

@@ -63,6 +63,7 @@ Order	Feature ID	Title
 7	F1-7	Cost Tracking (AWS + LLM)
 8	F1-8	System Metrics & Health
 9	F1-9	Real Data Providers + Caching + UI Display
+10	F1-10	Auth-Analyze Integration (End-to-End Flow)
 
 7. Admin Capabilities (Phase 1)
 Admin users must be able to:

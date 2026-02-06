@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { AppHeader } from "@/components/app-header";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useAuth } from "@/lib/auth-context";
 import { analyzeStocks, ApiError } from "@/lib/api";
@@ -26,7 +27,7 @@ export default function AnalyzePage() {
 }
 
 function AnalyzeContent() {
-  const { accessToken } = useAuth();
+  const { idToken } = useAuth();
   const router = useRouter();
 
   const [tickerInput, setTickerInput] = useState("");
@@ -55,13 +56,21 @@ function AnalyzeContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidInput || !accessToken) return;
+    console.log("handleSubmit called", { isValidInput, hasIdToken: !!idToken, idTokenLength: idToken?.length });
+    if (!isValidInput || !idToken) {
+      console.log("handleSubmit: Early return - invalid input or no token");
+      if (!idToken) {
+        setError("Not authenticated. Please sign in again.");
+      }
+      return;
+    }
 
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await analyzeStocks(tickers, horizon, accessToken);
+      console.log("Calling analyzeStocks with", { tickers, horizon, tokenLength: idToken.length });
+      const response = await analyzeStocks(tickers, horizon, idToken);
       router.push(`/results/${response.run_id}`);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -75,17 +84,7 @@ function AnalyzeContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">AlphaLens</h1>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-8">
