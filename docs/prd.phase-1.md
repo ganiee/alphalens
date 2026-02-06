@@ -53,15 +53,16 @@ These screens must comply with the Base UI contract.
 6. Feature Delivery List (Phase 1)
 Features are delivered incrementally and tracked in docs/feature-index.md.
 Order	Feature ID	Title
-0	F000	Project Bootstrap & CI/CD
-1	F001	OAuth Authentication & Roles
-2	F002	Recommendation Engine (Basic Scoring)
-3	F003	Usage Limits Enforcement
-4	F004	LLM Explainability Layer
-5	F005	User Dashboard & History
-6	F006	Admin Dashboard (Users & Usage)
-7	F007	Cost Tracking (AWS + LLM)
-8	F008	System Metrics & Health
+0	F1-0	Project Bootstrap & CI/CD
+1	F1-1	OAuth Authentication & Roles
+2	F1-2	Recommendation Engine (Basic Scoring)
+3	F1-3	Usage Limits Enforcement
+4	F1-4	LLM Explainability Layer
+5	F1-5	User Dashboard & History
+6	F1-6	Admin Dashboard (Users & Usage)
+7	F1-7	Cost Tracking (AWS + LLM)
+8	F1-8	System Metrics & Health
+9	F1-9	Real Data Providers + Caching + UI Display
 
 7. Admin Capabilities (Phase 1)
 Admin users must be able to:
