@@ -127,8 +127,7 @@ class CognitoAuthVerifier:
             token_client_id = payload.get("client_id") or payload.get("aud")
             expected_client_id = self.settings.cognito_client_id
             logger.info(
-                f"verify_token: client_id/aud: {token_client_id}, "
-                f"expected: {expected_client_id}"
+                f"verify_token: client_id/aud: {token_client_id}, expected: {expected_client_id}"
             )
             if token_client_id != expected_client_id:
                 raise AuthenticationError(
