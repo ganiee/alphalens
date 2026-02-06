@@ -512,3 +512,37 @@ CI Is Authoritative
         • Infra index updated (if infra changed)
         • Feature docs exist (if feature marked Complete)
 
+22. API Documentation Governance (MANDATORY)
+
+22.1 OpenAPI Specification Requirement
+    • All REST API endpoints MUST be documented in docs/openapi.yaml
+    • The OpenAPI spec follows OpenAPI 3.0 standard
+    • The spec is the single source of truth for API contracts
+
+22.2 Mandatory API Documentation Updates
+    When a feature adds, modifies, or removes an API endpoint, the following MUST be updated:
+        • Path definition in paths section
+        • Request/response schemas in components/schemas
+        • Error responses (400, 401, 403, 404, 500 as applicable)
+        • Authentication requirements
+        • Example requests and responses
+
+22.3 API Documentation Scope
+    Each endpoint definition MUST include:
+        • HTTP method and path
+        • Operation summary and description
+        • Request body schema (if applicable)
+        • Response schemas for all status codes
+        • Security requirements (bearer auth, API key, etc.)
+        • Tags for grouping related endpoints
+
+22.4 Feature Completion Gating (API)
+    • A feature that introduces or modifies API endpoints may NOT be marked Complete
+      unless docs/openapi.yaml is updated accordingly
+    • API changes without corresponding OpenAPI updates are invalid
+
+22.5 OpenAPI Validation
+    • The OpenAPI spec MUST be valid YAML and conform to OpenAPI 3.0 schema
+    • CI MAY include OpenAPI validation as a check
+    • Breaking API changes MUST be documented in the feature's spec.md
+
