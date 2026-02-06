@@ -40,3 +40,5 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+        env:
+          AUTH_MODE: mock
