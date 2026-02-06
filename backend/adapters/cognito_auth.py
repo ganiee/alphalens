@@ -125,10 +125,15 @@ class CognitoAuthVerifier:
 
             # Verify client_id for access tokens or aud for ID tokens
             token_client_id = payload.get("client_id") or payload.get("aud")
-            logger.info(f"verify_token: Token client_id/aud: {token_client_id}, expected: {self.settings.cognito_client_id}")
-            if token_client_id != self.settings.cognito_client_id:
+            expected_client_id = self.settings.cognito_client_id
+            logger.info(
+                f"verify_token: client_id/aud: {token_client_id}, "
+                f"expected: {expected_client_id}"
+            )
+            if token_client_id != expected_client_id:
                 raise AuthenticationError(
-                    f"Invalid token: client_id mismatch (expected {self.settings.cognito_client_id}, got {token_client_id})"
+                    f"Invalid token: client_id mismatch "
+                    f"(expected {expected_client_id}, got {token_client_id})"
                 )
 
             # Extract user information from token

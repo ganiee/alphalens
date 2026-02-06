@@ -7,8 +7,6 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-logger = logging.getLogger(__name__)
-
 from adapters.cache import NoOpCache, ProviderCache, SqliteProviderCache
 from adapters.cognito_auth import CognitoAuthVerifier
 from adapters.http_client import RetryingHttpClient
@@ -24,6 +22,8 @@ from domain.run_repository import RunRepository
 from domain.settings import Settings, get_settings
 from repo.recommendations import get_recommendation_repository
 from services.recommendation import RecommendationService
+
+logger = logging.getLogger(__name__)
 
 # Security scheme for OpenAPI docs
 security = HTTPBearer(auto_error=False)
