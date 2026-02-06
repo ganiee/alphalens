@@ -1,0 +1,806 @@
+openapi: 3.0.3
+info:
+  title: AlphaLens API
+  description: |
+    AI-powered stock analysis and recommendation API.
+
+    ## Authentication
+    All endpoints except `/health` require a valid JWT token in the Authorization header:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Rate Limits
+    - Free plan: 3 runs/month, max 3 tickers per run
+    - Pro plan: 20 runs/month, max 5 tickers per run
+
+    ## Data Sources
+    - Market Data: Polygon.io
+    - Fundamentals: Yahoo Finance (yfinance)
+    - News: NewsAPI with VADER sentiment analysis
+  version: 1.0.0
+  contact:
+    name: AlphaLens Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.alphalens.io
+    description: Production server
+
+tags:
+  - name: health
+    description: Health check endpoints
+  - name: auth
+    description: Authentication and user management
+  - name: recommendations
+    description: Stock analysis and recommendations
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Check if the API is running and healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get current user info
+      description: Returns the authenticated user's profile including email, roles, and plan
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/admin/check:
+    get:
+      tags:
+        - auth
+      summary: Check admin access
+      description: Verify if the current user has admin privileges
+      operationId: checkAdminAccess
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin access confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCheckResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /recommendations/analyze:
+    post:
+      tags:
+        - recommendations
+      summary: Analyze stocks
+      description: |
+        Run stock analysis and get recommendations.
+
+        The analysis includes:
+        - Technical indicators (RSI, MACD, SMA, volume)
+        - Fundamental metrics (P/E, margins, growth, debt)
+        - News sentiment analysis
+
+        Results are scored and ranked with allocation recommendations.
+      operationId: analyzeStocks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+            examples:
+              basic:
+                summary: Basic analysis
+                value:
+                  tickers: ["AAPL", "MSFT", "GOOG"]
+                  horizon: "1M"
+              single:
+                summary: Single stock
+                value:
+                  tickers: ["NVDA"]
+                  horizon: "3M"
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /recommendations/{run_id}:
+    get:
+      tags:
+        - recommendations
+      summary: Get recommendation result
+      description: Retrieve a specific recommendation result by run ID
+      operationId: getRecommendation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          description: Unique identifier for the recommendation run
+          schema:
+            type: string
+            format: uuid
+            example: "b6bf5e1c-3bc5-477f-bb3f-b7fa1749efe4"
+      responses:
+        '200':
+          description: Recommendation result retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /recommendations/:
+    get:
+      tags:
+        - recommendations
+      summary: Get recommendation history
+      description: Retrieve the user's recommendation run history with pagination
+      operationId: getRecommendationHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: History retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Cognito authentication
+
+  schemas:
+    # Health
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: "ok"
+
+    # Auth
+    UserRole:
+      type: string
+      enum:
+        - user
+        - admin
+      description: User role in the system
+
+    UserPlan:
+      type: string
+      enum:
+        - free
+        - pro
+      description: User subscription plan
+
+    UserResponse:
+      type: object
+      required:
+        - sub
+        - email
+        - email_verified
+        - roles
+        - plan
+      properties:
+        sub:
+          type: string
+          description: Unique user identifier (Cognito subject)
+          example: "user-123-abc"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        email_verified:
+          type: boolean
+          example: true
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          example: ["user"]
+        plan:
+          $ref: '#/components/schemas/UserPlan'
+          example: "free"
+
+    AdminCheckResponse:
+      type: object
+      required:
+        - message
+        - email
+      properties:
+        message:
+          type: string
+          example: "Admin access confirmed"
+        email:
+          type: string
+          format: email
+          example: "admin@example.com"
+
+    # Recommendations
+    Horizon:
+      type: string
+      enum:
+        - 1W
+        - 1M
+        - 3M
+        - 6M
+        - 1Y
+      description: |
+        Investment time horizon:
+        - 1W: One week
+        - 1M: One month (free plan default)
+        - 3M: Three months (pro only)
+        - 6M: Six months (pro only)
+        - 1Y: One year (pro only)
+
+    AnalyzeRequest:
+      type: object
+      required:
+        - tickers
+      properties:
+        tickers:
+          type: array
+          items:
+            type: string
+            pattern: "^[A-Z]{1,5}$"
+          minItems: 1
+          maxItems: 5
+          description: List of stock ticker symbols (1-5 uppercase letters)
+          example: ["AAPL", "MSFT", "GOOG"]
+        horizon:
+          $ref: '#/components/schemas/Horizon'
+          default: "1M"
+
+    AnalyzeResponse:
+      type: object
+      required:
+        - run_id
+        - result
+      properties:
+        run_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this analysis run
+          example: "b6bf5e1c-3bc5-477f-bb3f-b7fa1749efe4"
+        result:
+          $ref: '#/components/schemas/RecommendationResult'
+
+    RecommendationResult:
+      type: object
+      required:
+        - run_id
+        - user_id
+        - tickers
+        - horizon
+        - scores
+        - evidence
+        - created_at
+      properties:
+        run_id:
+          type: string
+          format: uuid
+          example: "b6bf5e1c-3bc5-477f-bb3f-b7fa1749efe4"
+        user_id:
+          type: string
+          example: "user-123-abc"
+        tickers:
+          type: array
+          items:
+            type: string
+          example: ["AAPL", "MSFT", "GOOG"]
+        horizon:
+          $ref: '#/components/schemas/Horizon'
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockScore'
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidencePacket'
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-01-31T23:00:00Z"
+
+    StockScore:
+      type: object
+      required:
+        - ticker
+        - composite_score
+        - breakdown
+        - rank
+        - allocation_pct
+      properties:
+        ticker:
+          type: string
+          example: "AAPL"
+        composite_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Weighted composite score (40% technical + 30% fundamental + 30% sentiment)
+          example: 72.5
+        breakdown:
+          $ref: '#/components/schemas/ScoreBreakdown'
+        rank:
+          type: integer
+          minimum: 1
+          description: Rank among analyzed stocks (1 = best)
+          example: 1
+        allocation_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Recommended portfolio allocation percentage
+          example: 38.5
+
+    ScoreBreakdown:
+      type: object
+      required:
+        - technical
+        - fundamental
+        - sentiment
+      properties:
+        technical:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Technical analysis score (RSI, MACD, SMA, volume)
+          example: 80.0
+        fundamental:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Fundamental analysis score (P/E, margins, growth, debt)
+          example: 77.0
+        sentiment:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: News sentiment score (VADER analysis)
+          example: 55.0
+
+    EvidencePacket:
+      type: object
+      required:
+        - ticker
+        - technical
+        - fundamental
+        - sentiment
+        - fetched_at
+      properties:
+        ticker:
+          type: string
+          example: "AAPL"
+        company_info:
+          $ref: '#/components/schemas/CompanyInfo'
+        technical:
+          $ref: '#/components/schemas/TechnicalIndicators'
+        fundamental:
+          $ref: '#/components/schemas/FundamentalMetrics'
+        sentiment:
+          $ref: '#/components/schemas/SentimentData'
+        fetched_at:
+          type: string
+          format: date-time
+          example: "2026-01-31T23:00:00Z"
+        news_articles:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewsArticleSummary'
+          maxItems: 5
+        attribution:
+          $ref: '#/components/schemas/ProviderAttribution'
+
+    CompanyInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Apple Inc."
+        sector:
+          type: string
+          nullable: true
+          example: "Technology"
+        industry:
+          type: string
+          nullable: true
+          example: "Consumer Electronics"
+        exchange:
+          type: string
+          nullable: true
+          example: "NASDAQ"
+        description:
+          type: string
+          nullable: true
+        website:
+          type: string
+          format: uri
+          nullable: true
+
+    TechnicalIndicators:
+      type: object
+      required:
+        - rsi
+        - macd
+        - macd_signal
+        - macd_histogram
+        - sma_50
+        - sma_200
+        - current_price
+        - volume_trend
+      properties:
+        rsi:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: "Relative Strength Index (14-period). <30 oversold, >70 overbought"
+          example: 45.2
+        macd:
+          type: number
+          format: float
+          description: MACD line value
+          example: 2.5
+        macd_signal:
+          type: number
+          format: float
+          description: MACD signal line value
+          example: 2.1
+        macd_histogram:
+          type: number
+          format: float
+          description: "MACD histogram (MACD - Signal). Positive = bullish momentum"
+          example: 0.4
+        sma_50:
+          type: number
+          format: float
+          description: 50-day Simple Moving Average
+          example: 185.0
+        sma_200:
+          type: number
+          format: float
+          description: 200-day Simple Moving Average
+          example: 178.0
+        current_price:
+          type: number
+          format: float
+          minimum: 0
+          description: Current stock price in USD
+          example: 190.50
+        volume_trend:
+          type: number
+          format: float
+          description: "Volume trend ratio. >1 = increasing, <1 = decreasing"
+          example: 1.15
+
+    FundamentalMetrics:
+      type: object
+      properties:
+        pe_ratio:
+          type: number
+          format: float
+          nullable: true
+          description: "Price-to-Earnings ratio. Lower = potentially undervalued"
+          example: 28.5
+        revenue_growth:
+          type: number
+          format: float
+          nullable: true
+          description: Year-over-year revenue growth (0.10 = 10%)
+          example: 0.08
+        profit_margin:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: Net profit margin (0.25 = 25%)
+          example: 0.25
+        debt_to_equity:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          description: "Debt-to-Equity ratio. Lower = less financial risk"
+          example: 1.8
+        market_cap:
+          type: number
+          format: float
+          nullable: true
+          description: Market capitalization in USD
+          example: 2900000000000
+
+    SentimentData:
+      type: object
+      required:
+        - score
+        - article_count
+        - positive_count
+        - negative_count
+        - neutral_count
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: -1
+          maximum: 1
+          description: "Aggregate sentiment score. -1 = very negative, +1 = very positive"
+          example: 0.25
+        article_count:
+          type: integer
+          minimum: 0
+          description: Total number of articles analyzed
+          example: 6
+        positive_count:
+          type: integer
+          minimum: 0
+          example: 3
+        negative_count:
+          type: integer
+          minimum: 0
+          example: 1
+        neutral_count:
+          type: integer
+          minimum: 0
+          example: 2
+
+    NewsArticleSummary:
+      type: object
+      required:
+        - title
+        - source
+        - published_at
+        - url
+      properties:
+        title:
+          type: string
+          example: "Apple Reports Record Quarterly Earnings"
+        source:
+          type: string
+          example: "Reuters"
+        published_at:
+          type: string
+          format: date-time
+          example: "2026-01-31T10:00:00Z"
+        url:
+          type: string
+          format: uri
+          example: "https://reuters.com/article/apple-earnings"
+        sentiment_label:
+          type: string
+          enum:
+            - positive
+            - negative
+            - neutral
+          nullable: true
+          description: Sentiment classification from VADER analysis
+          example: "positive"
+
+    ProviderAttribution:
+      type: object
+      properties:
+        market_data_provider:
+          type: string
+          description: Source of market/price data
+          example: "Polygon"
+        market_data_fetched_at:
+          type: string
+          format: date-time
+          nullable: true
+        fundamentals_provider:
+          type: string
+          description: Source of fundamental metrics
+          example: "Yahoo Finance"
+        fundamentals_fetched_at:
+          type: string
+          format: date-time
+          nullable: true
+        news_provider:
+          type: string
+          description: Source of news articles
+          example: "NewsAPI"
+        news_fetched_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    HistoryResponse:
+      type: object
+      required:
+        - runs
+        - total
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationSummary'
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of runs returned
+          example: 5
+
+    RecommendationSummary:
+      type: object
+      required:
+        - run_id
+        - tickers
+        - horizon
+        - created_at
+      properties:
+        run_id:
+          type: string
+          format: uuid
+          example: "b6bf5e1c-3bc5-477f-bb3f-b7fa1749efe4"
+        tickers:
+          type: array
+          items:
+            type: string
+          example: ["AAPL", "MSFT"]
+        horizon:
+          $ref: '#/components/schemas/Horizon'
+        top_pick:
+          type: string
+          nullable: true
+          description: Highest scoring ticker
+          example: "AAPL"
+        top_score:
+          type: number
+          format: float
+          nullable: true
+          description: Score of the top pick
+          example: 72.5
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-01-31T23:00:00Z"
+
+    # Error schemas
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Invalid ticker symbol: INVALID123"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input or plan constraint violation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_ticker:
+              summary: Invalid ticker
+              value:
+                detail: "Invalid ticker: Ticker not found or has no data"
+            plan_limit:
+              summary: Plan limit exceeded
+              value:
+                detail: "Free plan allows maximum 3 tickers per run. You requested 5."
+            invalid_horizon:
+              summary: Invalid horizon for plan
+              value:
+                detail: "Free plan only allows these horizons: 1M. Upgrade to Pro for access to 3M."
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Missing authorization header"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            admin_required:
+              summary: Admin access required
+              value:
+                detail: "Admin access required"
+            wrong_user:
+              summary: Wrong user
+              value:
+                detail: "You don't have access to this recommendation run"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Recommendation run 'xyz-123' not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "An unexpected error occurred"
