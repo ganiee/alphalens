@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AppHeader } from "@/components/app-header";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useAuth } from "@/lib/auth-context";
 import { getHistory, ApiError, RecommendationSummary } from "@/lib/api";
@@ -16,7 +17,7 @@ export default function HistoryPage() {
 }
 
 function HistoryContent() {
-  const { accessToken } = useAuth();
+  const { idToken } = useAuth();
   const router = useRouter();
 
   const [runs, setRuns] = useState<RecommendationSummary[]>([]);
@@ -25,10 +26,10 @@ function HistoryContent() {
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!accessToken) return;
+      if (!idToken) return;
 
       try {
-        const data = await getHistory(accessToken);
+        const data = await getHistory(idToken);
         setRuns(data.runs);
       } catch (err) {
         if (err instanceof ApiError) {
@@ -42,7 +43,7 @@ function HistoryContent() {
     };
 
     fetchHistory();
-  }, [accessToken]);
+  }, [idToken]);
 
   const horizonLabels: Record<string, string> = {
     "1W": "1 Week",
@@ -54,25 +55,7 @@ function HistoryContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">AlphaLens</h1>
-          <div className="space-x-2">
-            <button
-              onClick={() => router.push("/analyze")}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-            >
-              New Analysis
-            </button>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200"
-            >
-              Dashboard
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AppHeader } from "@/components/app-header";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useAuth } from "@/lib/auth-context";
 
@@ -23,14 +24,14 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user, accessToken } = useAuth();
+  const { user, idToken } = useAuth();
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (!accessToken) {
+      if (!idToken) {
         setIsLoading(false);
         return;
       }
@@ -46,7 +47,7 @@ function DashboardContent() {
           process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const response = await fetch(`${backendUrl}/auth/me`, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
 
@@ -82,11 +83,7 @@ function DashboardContent() {
     };
 
     fetchUserInfo();
-  }, [accessToken, user]);
-
-  const handleLogout = () => {
-    router.push("/signout");
-  };
+  }, [idToken, user]);
 
   if (isLoading) {
     return (
@@ -104,17 +101,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">AlphaLens</h1>
-          <button
-            onClick={handleLogout}
-            className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
+      <AppHeader showBackToDashboard={false} />
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">

@@ -1,13 +1,20 @@
 """In-memory repository for recommendation results."""
 
 from domain.recommendation import RecommendationResult, RecommendationSummary
+from domain.run_repository import RunRepository
 
 
-class RecommendationRepository:
+class InMemoryRunRepository:
     """In-memory storage for recommendation results.
 
-    Note: This is a simple in-memory implementation for MVP.
+    Implements the RunRepository protocol for testing and development.
     Production should use DynamoDB or similar persistent storage.
+
+    This implementation:
+    - Stores results in a dictionary keyed by run_id
+    - Filters by user_id for access control
+    - Sorts by created_at for history queries
+    - Supports pagination via limit/offset
     """
 
     def __init__(self) -> None:
@@ -98,12 +105,20 @@ class RecommendationRepository:
 
 
 # Singleton instance for the application
-_repository: RecommendationRepository | None = None
+_repository: RunRepository | None = None
 
 
-def get_recommendation_repository() -> RecommendationRepository:
-    """Get the singleton repository instance."""
+def get_recommendation_repository() -> RunRepository:
+    """Get the singleton repository instance.
+
+    Returns:
+        RunRepository implementation (currently InMemoryRunRepository)
+    """
     global _repository
     if _repository is None:
-        _repository = RecommendationRepository()
+        _repository = InMemoryRunRepository()
     return _repository
+
+
+# Backwards compatibility alias
+RecommendationRepository = InMemoryRunRepository

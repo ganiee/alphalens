@@ -1,5 +1,6 @@
 """FastAPI dependencies for authentication and authorization."""
 
+import logging
 from functools import lru_cache
 from typing import Annotated
 
@@ -17,9 +18,12 @@ from adapters.newsapi_news import NewsAPINewsProvider
 from adapters.polygon_market_data import PolygonMarketDataProvider
 from adapters.yfinance_fundamentals import YFinanceFundamentalsProvider
 from domain.auth import AuthenticationError, AuthVerifier, TokenPayload, User
+from domain.run_repository import RunRepository
 from domain.settings import Settings, get_settings
-from repo.recommendations import RecommendationRepository, get_recommendation_repository
+from repo.recommendations import get_recommendation_repository
 from services.recommendation import RecommendationService
+
+logger = logging.getLogger(__name__)
 
 # Security scheme for OpenAPI docs
 security = HTTPBearer(auto_error=False)
@@ -56,6 +60,7 @@ async def get_token_payload(
         HTTPException: 401 if token is missing or invalid
     """
     if credentials is None:
+        logger.warning("get_token_payload: Missing authorization header")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authorization header",
@@ -63,8 +68,10 @@ async def get_token_payload(
         )
 
     try:
+        logger.info(f"get_token_payload: Verifying token (length: {len(credentials.credentials)})")
         return await auth_verifier.verify_token(credentials.credentials)
     except AuthenticationError as e:
+        logger.error(f"get_token_payload: Authentication error: {e.message}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e.message),
@@ -199,4 +206,4 @@ def get_recommendation_service() -> RecommendationService:
 
 # Type alias for recommendation dependencies
 RecommendationServiceDep = Annotated[RecommendationService, Depends(get_recommendation_service)]
-RecommendationRepoDep = Annotated[RecommendationRepository, Depends(get_recommendation_repository)]
+RecommendationRepoDep = Annotated[RunRepository, Depends(get_recommendation_repository)]

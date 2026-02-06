@@ -1,19 +1,19 @@
 """Domain entities for authentication."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Protocol
 
 from pydantic import BaseModel, EmailStr
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """User roles in the system."""
 
     USER = "user"
     ADMIN = "admin"
 
 
-class UserPlan(str, Enum):
+class UserPlan(StrEnum):
     """User subscription plans."""
 
     FREE = "free"

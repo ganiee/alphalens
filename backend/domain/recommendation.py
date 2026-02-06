@@ -3,7 +3,7 @@
 import re
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from domain.auth import UserPlan
 
 
-class Horizon(str, Enum):
+class Horizon(StrEnum):
     """Investment time horizons."""
 
     ONE_WEEK = "1W"

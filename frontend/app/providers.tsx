@@ -15,8 +15,10 @@ export function Providers({ children }: ProvidersProps) {
 
   useEffect(() => {
     if (isConfigured()) {
+      console.log("Amplify config:", JSON.stringify(amplifyConfig, null, 2));
       Amplify.configure(amplifyConfig, { ssr: true });
       setIsAmplifyConfigured(true);
+      console.log("Amplify configured successfully");
     } else {
       // Allow app to run without Cognito for development
       console.warn(
